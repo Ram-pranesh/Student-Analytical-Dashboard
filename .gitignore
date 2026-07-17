@@ -1,0 +1,16 @@
+# Data and DB Files
+Reward Points Data.xlsx
+server/reward_points.db
+
+# Python Caches
+server/__pycache__/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Node.js / Build Directories
+node_modules/
+dist/
+dist-ssr/
+*.local
