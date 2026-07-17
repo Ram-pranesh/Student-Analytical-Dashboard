@@ -12,7 +12,7 @@ import {
   PieChart, Pie, Cell, CartesianGrid, Area, AreaChart
 } from 'recharts';
 
-const API_BASE = "http://127.0.0.1:8000/api";
+const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api";
 
 // ─── Formatters ──────────────────────────────────────────────────────────────
 const fmt = (v) => {
@@ -429,6 +429,7 @@ function App() {
   const [personalAnalytics, setPersonalAnalytics] = useState(null);
   const [trendView, setTrendView] = useState("monthly");
   const [peerTab, setPeerTab] = useState("branch");
+  const [peerYearTab, setPeerYearTab] = useState("my_year");
   const [peerLeaderboard, setPeerLeaderboard] = useState([]);
   const [txLimit, setTxLimit] = useState(10);
   const [isStudentInspectModalOpen, setIsStudentInspectModalOpen] = useState(false);
@@ -481,7 +482,7 @@ function App() {
 
   useEffect(() => {
     if (isLoggedIn && role === "student" && personalData) fetchStudentPeers();
-  }, [peerTab, personalData]);
+  }, [peerTab, peerYearTab, personalData]);
 
   const fetchKpis = async () => { try { const d = await (await fetch(`${API_BASE}/kpis`)).json(); setKpis(d); } catch (e) {} };
   const fetchDeptStats = async () => { try { const d = await (await fetch(`${API_BASE}/departments`)).json(); setDeptStats(d); } catch (e) {} };
@@ -533,7 +534,8 @@ function App() {
   const fetchStudentPeers = async () => {
     try {
       const deptFilter = peerTab === "branch" ? personalData.department : "";
-      const data = await (await fetch(`${API_BASE}/leaderboard?limit=10&offset=0&department=${encodeURIComponent(deptFilter)}`)).json();
+      const yearFilter = peerYearTab === "my_year" ? personalData.year : "";
+      const data = await (await fetch(`${API_BASE}/leaderboard?limit=10&offset=0&department=${encodeURIComponent(deptFilter)}&year=${encodeURIComponent(yearFilter)}`)).json();
       setPeerLeaderboard(data.slice(0, 10));
     } catch (e) {}
   };
@@ -657,11 +659,11 @@ function App() {
         <aside className="sidebar">
           <div className="sidebar-brand">
             <div className="sidebar-brand-icon"><Award size={18} color="#fff" /></div>
-            <span className="fw-bold" style={{ fontSize: 14 }}>Reward Intelligence</span>
+            <span className="fw-bold" style={{ fontSize: 14 }}>Academic Rewards</span>
           </div>
           <nav className="flex-fill p-2 d-flex flex-column gap-1 pt-3">
             {[
-              { key: "overview",  icon: <Layers size={16} />,      label: "Overview Dashboard" },
+              { key: "overview",  icon: <Layers size={16} />,      label: "Overview Portal" },
               { key: "assistant", icon: <BrainCircuit size={16} />, label: "AI Assistant" },
               { key: "alerts",    icon: <ShieldAlert size={16} />,  label: "Policy Alerts" },
             ].map(tab => (
@@ -692,8 +694,8 @@ function App() {
         <main className="main-content">
           <header className="main-header d-flex justify-content-between align-items-center">
             <div>
-              <h1 className="fw-bold mb-1" style={{ fontSize: 22, letterSpacing: '-0.02em' }}>Institution Rewards Intelligence</h1>
-              <p className="text-muted text-sm m-0">Aggregate performance profiling, predictive clustering &amp; prescriptive checks.</p>
+              <h1 className="fw-bold mb-1" style={{ fontSize: 22, letterSpacing: '-0.02em' }}>Institutional Student Rewards Portal</h1>
+              <p className="text-muted text-sm m-0">Comprehensive department metrics, credit statistics, policy logs, and department analytics.</p>
             </div>
             <form onSubmit={(e) => { e.preventDefault(); if (overviewSearch.trim()) handleOpenStudentDrawer(overviewSearch.trim().toUpperCase()); setOverviewSearch(""); }} className="d-flex gap-2">
               <input
@@ -1396,8 +1398,8 @@ function App() {
         <div className="d-flex align-items-center gap-3">
           <div className="sidebar-brand-icon" style={{ width: 36, height: 36, borderRadius: 8, flexShrink: 0 }}><Award size={18} color="#fff" /></div>
           <div>
-            <h5 className="fw-bold m-0" style={{ fontSize: 15 }}>Student Reward Hub</h5>
-            <p className="text-muted m-0" style={{ fontSize: 11 }}>Performance Insights &amp; Peer Comparison</p>
+            <h5 className="fw-bold m-0" style={{ fontSize: 15 }}>Student Performance &amp; Reward Portal</h5>
+            <p className="text-muted m-0" style={{ fontSize: 11 }}>Official tracking of academic milestones, reward points, and peer comparisons.</p>
           </div>
         </div>
         <div className="d-flex align-items-center gap-2">
@@ -1415,19 +1417,39 @@ function App() {
           {/* KPI Strip */}
           <div className="row g-3 mb-4">
             {[
-              { label: "Active Balance",  value: fmt(personalData.balance_points),  icon: <Zap size={20} />,     color: "#059669", bg: "rgba(5,150,105,0.08)" },
-              { label: "Total Points",    value: fmt(personalData.total_points),   icon: <Trophy size={20} />,  color: "#4f46e5", bg: "rgba(79,70,229,0.08)" },
-              { label: "Overall / Dept Rank",value: `#${personalData.rank} / #${personalData.dept_rank}`,           icon: <Star size={20} />,    color: "#d97706", bg: "rgba(217,119,6,0.08)" },
-              { label: "Engagement",      value: personalData.engagement_group,     icon: <Target size={20} />,  color: personalData.engagement_group === 'High' ? '#059669' : personalData.engagement_group === 'Medium' ? '#d97706' : '#dc2626', bg: personalData.engagement_group === 'High' ? 'rgba(5,150,105,0.08)' : personalData.engagement_group === 'Medium' ? 'rgba(217,119,6,0.08)' : 'rgba(220,38,38,0.08)' },
-            ].map((kpi, i) => (
-              <div key={i} className="col-md-3 col-6">
-                <div className="student-kpi-card">
-                  <div className="student-kpi-icon" style={{ backgroundColor: kpi.bg, color: kpi.color }}>{kpi.icon}</div>
-                  <div className="student-kpi-label">{kpi.label}</div>
-                  <div className="student-kpi-value" style={{ color: kpi.color }}>{kpi.value}</div>
+              { label: "Active Balance",  value: fmt(personalData.balance_points), color: "#166534" },
+              { label: "Total Points",    value: fmt(personalData.total_points), color: "#4f46e5" },
+              { label: "Overall / Dept Rank", value: `#${personalData.rank} / #${personalData.dept_rank}`, color: "#92400e" },
+              { 
+                label: "Engagement Status", 
+                value: personalData.engagement_group, 
+                isStatus: true,
+                color: personalData.engagement_group === 'High' ? '#166534' : personalData.engagement_group === 'Medium' ? '#92400e' : '#991b1b',
+                badgeClass: personalData.engagement_group === 'High' ? 'status-high' : personalData.engagement_group === 'Medium' ? 'status-medium' : 'status-low'
+              },
+            ].map((kpi, i) => {
+              const valFontSize = kpi.value.length > 10 ? '26px' : '34px';
+              return (
+                <div key={i} className="col-md-3 col-6">
+                  <div className="enterprise-kpi-card">
+                    <div className="enterprise-kpi-indicator" style={{ backgroundColor: kpi.color }} />
+                    <div className="enterprise-kpi-header">
+                      <span className="enterprise-kpi-dot" style={{ backgroundColor: kpi.color }} />
+                      <span className="enterprise-kpi-label">{kpi.label}</span>
+                    </div>
+                    {kpi.isStatus ? (
+                      <div className={`enterprise-status-badge ${kpi.badgeClass}`}>
+                        {kpi.value}
+                      </div>
+                    ) : (
+                      <div className="enterprise-kpi-value" style={{ fontSize: valFontSize }}>
+                        {kpi.value}
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Row 1: Profile + Trend + Pie (with year tabs) */}
@@ -1495,7 +1517,7 @@ function App() {
                           </linearGradient>
                         </defs>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-color)" vertical={false} />
-                        <XAxis dataKey={trendView === "weekly" ? "day" : trendView === "monthly" ? "month" : "year"} tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} tickFormatter={v => typeof v === 'string' ? v.slice(0, 3) : v} />
+                        <XAxis dataKey={trendView === "weekly" ? "day" : trendView === "monthly" ? "month" : "year"} tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} tickFormatter={v => trendView === "yearly" ? v : (typeof v === 'string' ? v.slice(0, 3) : v)} />
                         <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} tickFormatter={v => v.toLocaleString()} />
                         <Tooltip content={<CustomTooltip />} />
                         <Area type="monotone" dataKey="points" stroke="#6366f1" strokeWidth={2} fill="url(#lineGrad)" name="Points Earned" activeDot={{ r: 5, fill: '#6366f1' }} />
@@ -1514,27 +1536,31 @@ function App() {
                     <BarChart2 className="me-2" size={14} color="var(--brand-color)" /> Points by Category
                   </h6>
                 </div>
-                <div style={{ width: '100%', height: 180 }}>
+                <div style={{ width: '100%', height: 210 }}>
                   <ResponsiveContainer>
                     <PieChart>
-                      <Pie data={pieData} cx="50%" cy="44%" innerRadius={42} outerRadius={65} paddingAngle={3} dataKey="points" nameKey="category">
+                      <Pie data={pieData} cx="50%" cy="50%" innerRadius={42} outerRadius={65} paddingAngle={3} dataKey="points" nameKey="category">
                         {pieData.map((_, idx) => <Cell key={idx} fill={COLORS[idx % COLORS.length]} />)}
                       </Pie>
                       <Tooltip formatter={v => `${fmt(v)} pts`} />
-                      <Legend iconSize={9} formatter={v => <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{v}</span>} />
+                      <Legend verticalAlign="bottom" height={40} iconSize={9} formatter={v => <span style={{ fontSize: '10px', color: 'var(--text-secondary)' }}>{v}</span>} />
                     </PieChart>
                   </ResponsiveContainer>
                 </div>
                 <div className="mt-1 pt-2 border-top">
-                  {pieData.sort((a, b) => b.points - a.points).slice(0, 3).map((cat, i) => (
-                    <div key={i} className="d-flex justify-content-between align-items-center mb-1">
-                      <div className="d-flex align-items-center gap-2">
-                        <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: COLORS[i] }} />
-                        <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{cat.category?.split(' ').slice(0, 2).join(' ')}</span>
+                  {[...pieData].sort((a, b) => b.points - a.points).slice(0, 3).map((cat, i) => {
+                    const originalIndex = pieData.findIndex(x => x.category === cat.category);
+                    const color = COLORS[originalIndex !== -1 ? originalIndex % COLORS.length : i];
+                    return (
+                      <div key={i} className="d-flex justify-content-between align-items-center mb-1">
+                        <div className="d-flex align-items-center gap-2">
+                          <div style={{ width: 7, height: 7, borderRadius: '50%', backgroundColor: color }} />
+                          <span style={{ fontSize: 11, color: 'var(--text-secondary)' }}>{cat.category?.split(' ').slice(0, 2).join(' ')}</span>
+                        </div>
+                        <span style={{ fontWeight: 700, fontSize: 11, color: color }}>{fmt(cat.points)} pts</span>
                       </div>
-                      <span style={{ fontWeight: 700, fontSize: 11, color: COLORS[i] }}>{fmt(cat.points)} pts</span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             </div>
@@ -1648,12 +1674,23 @@ function App() {
                   <Grid className="me-2" size={14} color="var(--brand-color)" /> Top 10 Peer Benchmark
                 </h6>
                 <p className="text-muted m-0 mt-1" style={{ fontSize: 11 }}>
-                  {peerTab === "branch" ? `Top 10 students in ${personalData.department}` : "Top 10 students across all branches"}
+                  Top 10 students in <strong>{peerTab === "branch" ? personalData.department : "All Branches"}</strong> — <strong>{peerYearTab === "my_year" ? `Year ${personalData.year}` : "All Years"}</strong>
                 </p>
               </div>
-              <div className="year-tab-strip">
-                <button className={`year-tab-btn ${peerTab === 'branch' ? 'active' : ''}`} onClick={() => setPeerTab("branch")}>My Branch</button>
-                <button className={`year-tab-btn ${peerTab === 'all' ? 'active' : ''}`} onClick={() => setPeerTab("all")}>All Branches</button>
+              <div className="d-flex align-items-center gap-2 flex-wrap">
+                <div className="year-tab-strip">
+                  <button className={`year-tab-btn ${peerTab === 'branch' ? 'active' : ''}`} onClick={() => setPeerTab("branch")}>My Branch</button>
+                  <button className={`year-tab-btn ${peerTab === 'all' ? 'active' : ''}`} onClick={() => setPeerTab("all")}>All Branches</button>
+                </div>
+                <select 
+                  className="form-select form-select-sm" 
+                  style={{ width: 'auto', fontSize: 12, padding: '4px 28px 4px 10px', borderRadius: 6, cursor: 'pointer', border: '1px solid var(--border-color)', backgroundColor: 'var(--bg-secondary)', color: 'var(--text-primary)' }}
+                  value={peerYearTab} 
+                  onChange={e => setPeerYearTab(e.target.value)}
+                >
+                  <option value="my_year">My Year (Year {personalData.year})</option>
+                  <option value="all">All Years</option>
+                </select>
               </div>
             </div>
             <div className="table-responsive">
@@ -1680,9 +1717,11 @@ function App() {
                           </div>
                         </td>
                         <td className={`fw-semibold ${isMe ? 'text-primary' : ''}`}>{s.roll_no}</td>
-                        <td className="fw-semibold d-flex align-items-center gap-2">
-                          {s.student_name}
-                          {isMe && <span className="badge bg-primary text-white text-xxs px-2 py-1">You</span>}
+                        <td className="fw-semibold">
+                          <div className="d-flex align-items-center gap-2">
+                            {s.student_name}
+                            {isMe && <span className="badge bg-primary text-white text-xxs px-2 py-1">You</span>}
+                          </div>
                         </td>
                         <td className="text-muted col-narrow-dept" style={{ fontSize: 12 }}>{s.department}</td>
                         <td className="text-center">{s.year}</td>

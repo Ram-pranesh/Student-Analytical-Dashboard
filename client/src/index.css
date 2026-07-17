@@ -953,3 +953,98 @@ body {
   font-weight: 600;
   color: var(--text-primary);
 }
+
+/* ── Modern Enterprise KPI Cards ── */
+.enterprise-kpi-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  min-height: 120px;
+  position: relative;
+  overflow: hidden;
+}
+
+.enterprise-kpi-card:hover {
+  border-color: var(--text-secondary);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.enterprise-kpi-indicator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 4px;
+}
+
+.enterprise-kpi-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.enterprise-kpi-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.enterprise-kpi-label {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.enterprise-kpi-value {
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+}
+
+/* Muted badge for engagement */
+.enterprise-status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  width: fit-content;
+  margin-top: 4px;
+}
+.enterprise-status-badge.status-high {
+  background-color: #f0fdf4;
+  color: #166534;
+}
+.enterprise-status-badge.status-medium {
+  background-color: #fffbeb;
+  color: #92400e;
+}
+.enterprise-status-badge.status-low {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+[data-theme="dark"] .enterprise-status-badge.status-high {
+  background-color: rgba(63, 185, 80, 0.15);
+  color: #3fb950;
+}
+[data-theme="dark"] .enterprise-status-badge.status-medium {
+  background-color: rgba(217, 119, 6, 0.15);
+  color: #d97706;
+}
+[data-theme="dark"] .enterprise-status-badge.status-low {
+  background-color: rgba(220, 38, 38, 0.15);
+  color: #f87171;
+}
+
