@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.svg
+/server/__pycache__
+/server/reward_points.db
+../Reward Points Data.xlsx
