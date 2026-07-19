@@ -36,7 +36,7 @@ updates = []
 for roll_no, current_dept in students:
     match = re.search(r'[A-Za-z]+', roll_no)
     if match:
-        code = match.group()
+        code = match.group().upper()
         # Handle 'U' prefix like 'UCS'
         if len(code) == 3 and code.startswith('U'):
             code = code[1:]

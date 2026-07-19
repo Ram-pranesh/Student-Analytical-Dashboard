@@ -14,3 +14,4 @@ node_modules/
 dist/
 dist-ssr/
 *.local
+project_overview.txt

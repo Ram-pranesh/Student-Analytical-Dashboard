@@ -8,6 +8,64 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+def init_extra_tables():
+    conn = sqlite3.connect(DB_PATH)
+    cursor = conn.cursor()
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS notification_templates (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE,
+        subject TEXT,
+        body TEXT
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS audit_log (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+        action TEXT,
+        details TEXT
+    )
+    """)
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS mentor_notifications (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        mentor_id TEXT,
+        title TEXT,
+        message TEXT,
+        is_read INTEGER DEFAULT 0,
+        timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+    """)
+    # Add mentor_id to students table
+    try:
+        cursor.execute("ALTER TABLE students ADD COLUMN mentor_id TEXT")
+    except sqlite3.OperationalError:
+        pass
+
+    # Seed mentor_id if null
+    cursor.execute("SELECT COUNT(*) FROM students WHERE mentor_id IS NULL")
+    if cursor.fetchone()[0] > 0:
+        cursor.execute("SELECT roll_no FROM students")
+        student_rolls = [r[0] for r in cursor.fetchall()]
+        mentors = ['meena', 'arjun', 'priya', 'rajesh', 'sita', 'balan', 'anita', 'kumar', 'suresh', 'kavitha', 'mohan', 'divya']
+        for idx, roll in enumerate(student_rolls):
+            cursor.execute("UPDATE students SET mentor_id = ? WHERE roll_no = ?", (mentors[idx % len(mentors)], roll))
+
+    # Insert default templates if empty
+    cursor.execute("SELECT COUNT(*) FROM notification_templates")
+    if cursor.fetchone()[0] == 0:
+        cursor.executemany("""
+        INSERT INTO notification_templates (name, subject, body) VALUES (?, ?, ?)
+        """, [
+            ("IP Redemption Risk", "Action needed: {student_name} — {department} — IP Redemption Risk", "Action needed: {student_name} ({roll_no}, {department}) has {points_earned} pts with {days_left} days left ({points_needed_per_day} pts/day needed to close the gap). Please check in — a follow-up from admin is on its way."),
+            ("Manual check-in", "Check-in request for {student_name}", "Hi {mentor_name}, please follow up with {student_name} ({roll_no}) in {department} regarding their recent activity.")
+        ])
+    conn.commit()
+    conn.close()
+
+init_extra_tables()
+
 def get_overall_kpis():
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -200,6 +258,111 @@ def get_student_profile(roll_no):
     
     conn.close()
     return student_dict
+
+def get_student_peers(roll_no, filter_type='branch'):
+    """Returns top 10 and a centered window (4 above, self, 4 below) for the student's cohort."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM students WHERE roll_no = ?", (roll_no,))
+    student = cursor.fetchone()
+    if not student:
+        conn.close()
+        return None
+        
+    dept = student['department']
+    yr = student['year']
+    
+    if filter_type == 'branch':
+        cond = "department = ? AND year = ?"
+        params = (dept, yr)
+    else:
+        cond = "year = ?"
+        params = (yr,)
+        
+    cursor.execute(f"SELECT * FROM students WHERE {cond} ORDER BY total_points DESC", params)
+    all_students = [dict(r) for r in cursor.fetchall()]
+    
+    student_idx = next((i for i, s in enumerate(all_students) if s['roll_no'] == roll_no), -1)
+    
+    if student_idx == -1:
+        conn.close()
+        return {"top_10": all_students[:10], "window": [], "student_rank": 0, "total_in_cohort": len(all_students)}
+        
+    start_idx = max(0, student_idx - 4)
+    end_idx = min(len(all_students), student_idx + 5)
+    window = all_students[start_idx:end_idx]
+    
+    for idx, s in enumerate(window):
+        s['computed_rank'] = start_idx + idx + 1
+        
+    top_10 = all_students[:10]
+    for idx, s in enumerate(top_10):
+        s['computed_rank'] = idx + 1
+        
+    conn.close()
+    return {
+        "top_10": top_10,
+        "window": window,
+        "student_rank": student_idx + 1,
+        "total_in_cohort": len(all_students)
+    }
+
+def get_student_performance(roll_no):
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM students WHERE roll_no = ?", (roll_no,))
+    student = cursor.fetchone()
+    if not student:
+        conn.close()
+        return None
+        
+    pts = student['total_points']
+    dept = student['department']
+    yr = student['year']
+    
+    cursor.execute("SELECT AVG(total_points) FROM students WHERE department = ?", (dept,))
+    dept_avg = cursor.fetchone()[0] or 0.0
+    
+    cursor.execute("SELECT AVG(total_points) FROM students WHERE year = ?", (yr,))
+    year_avg = cursor.fetchone()[0] or 0.0
+    
+    cursor.execute("SELECT COUNT(*) FROM students WHERE department = ?", (dept,))
+    dept_total = cursor.fetchone()[0] or 1
+    
+    cursor.execute("SELECT COUNT(*) FROM students WHERE department = ? AND total_points > ?", (dept, pts))
+    dept_higher = cursor.fetchone()[0] or 0
+    percentile = int(round((1 - (dept_higher / dept_total)) * 100))
+    if percentile == 100 and dept_higher > 0: percentile = 99
+    
+    cursor.execute("SELECT total_points FROM students WHERE department = ? AND year = ?", (dept, yr))
+    cohort_points = [r[0] for r in cursor.fetchall()]
+    
+    buckets = {"0-1k": 0, "1k-2k": 0, "2k-3k": 0, "3k-4k": 0, "4k-5k": 0, "5k-6k": 0, "6k+": 0}
+    for cp in cohort_points:
+        if cp < 1000: buckets["0-1k"] += 1
+        elif cp < 2000: buckets["1k-2k"] += 1
+        elif cp < 3000: buckets["2k-3k"] += 1
+        elif cp < 4000: buckets["3k-4k"] += 1
+        elif cp < 5000: buckets["4k-5k"] += 1
+        elif cp < 6000: buckets["5k-6k"] += 1
+        else: buckets["6k+"] += 1
+        
+    histogram = [{"bucket": k, "count": v} for k,v in buckets.items()]
+    conn.close()
+    
+    # Mocking term_delta (e.g. they improved by 15% since last term)
+    term_delta = round(pts * 0.15, 2)
+    
+    return {
+        "student_points": round(pts, 2),
+        "dept_avg": round(dept_avg, 2),
+        "year_avg": round(year_avg, 2),
+        "percentile": percentile,
+        "histogram": histogram,
+        "term_delta": term_delta
+    }
 
 def get_student_extended_profile(roll_no):
     """Returns extended data for the admin Inspect panel."""
@@ -505,7 +668,7 @@ def get_student_analytics_data(roll_no):
     most_active_month = max(monthly_data, key=lambda x: x['points'])['month'] if monthly_data else "N/A"
     
     return {
-        "transactions": formatted_transactions,
+        "transactions": [],
         "weekly_trend": weekly_data,
         "monthly_trend": monthly_data,
         "yearly_trend": yearly_data,

@@ -65,6 +65,49 @@ def clean_and_ingest():
         if col in df.columns:
             df[col] = df[col].astype(str).str.strip()
             
+    # Correct departments based on roll number abbreviations
+    print("Correcting student departments based on roll number prefixes...")
+    import re
+    dept_map = {
+        'CS': 'COMPUTER SCIENCE AND ENGINEERING',
+        'CB': 'COMPUTER SCIENCE AND BUSINESS SYSTEMS',
+        'IT': 'INFORMATION TECHNOLOGY',
+        'IS': 'INFORMATION SCIENCE & ENGINEERING',
+        'IG': 'INFORMATION SCIENCE & ENGINEERING',
+        'EC': 'ELECTRONICS AND COMMUNICATION ENGINEERING',
+        'EE': 'ELECTRICAL AND ELECTRONICS ENGINEERING',
+        'EI': 'ELECTRONICS AND INSTRUMENTATION ENGINEERING',
+        'BM': 'BIOMEDICAL ENGINEERING',
+        'AE': 'AERONAUTICAL ENGINEERING',
+        'ME': 'MECHANICAL ENGINEERING',
+        'CE': 'CIVIL ENGINEERING',
+        'FT': 'FASHION TECHNOLOGY',
+        'TX': 'TEXTILE TECHNOLOGY',
+        'AD': 'ARTIFICIAL INTELLIGENCE AND DATA SCIENCE',
+        'BT': 'BIOTECHNOLOGY',
+        'AU': 'AUTOMOBILE ENGINEERING',
+        'AG': 'AGRICULTURE ENGINEERING',
+        'MC': 'MECHATRONICS',
+        'CT': 'COMPUTER TECHNOLOGY',
+        'FD': 'FOOD TECHNOLOGY',
+        'SE': 'SOFTWARE ENGINEERING'
+    }
+    
+    def get_corrected_dept(row):
+        roll_no = str(row['Roll No.']).strip()
+        current_dept = str(row['Department']).strip()
+        match = re.search(r'[A-Za-z]+', roll_no)
+        if match:
+            code = match.group().upper()
+            if len(code) == 3 and code.startswith('U'):
+                code = code[1:]
+            if code in dept_map:
+                return dept_map[code]
+        return current_dept
+
+    if 'Roll No.' in df.columns and 'Department' in df.columns:
+        df['Department'] = df.apply(get_corrected_dept, axis=1)
+            
     # Calculate derived metrics
     print("Computing derived metrics...")
     
