@@ -8,6 +8,12 @@ def get_db_connection():
     conn.row_factory = sqlite3.Row
     return conn
 
+
+def get_readonly_db_connection():
+    conn = sqlite3.connect(f"file:{DB_PATH}?mode=ro", uri=True)
+    conn.row_factory = sqlite3.Row
+    return conn
+
 def init_extra_tables():
     conn = sqlite3.connect(DB_PATH)
     cursor = conn.cursor()
@@ -243,18 +249,35 @@ def get_student_profile(roll_no):
         breakdown.append({
             "category": r['category'],
             "count": r['activity_count'],
-            "points": round(r['points_earned'], 2)
+                "points": int(round(float(r['points_earned'] or 0.0)))
         })
         
     student_dict = dict(student_row)
     student_dict['rank'] = rank
     student_dict['dept_rank'] = dept_rank
     student_dict['breakdown'] = breakdown
+
+    try:
+        from ml_model import get_student_severity_tier
+        student_dict['severity_tier'] = get_student_severity_tier(roll_no)
+    except Exception:
+        student_dict['severity_tier'] = None
     
-    # Round numeric fields
-    for field in ['total_points', 'balance_points', 'redeemed_points', 'cumulative_points', 'initial_points']:
-        if field in student_dict and student_dict[field] is not None:
-            student_dict[field] = round(float(student_dict[field]), 2)
+    # Round numeric fields while preserving the dataset identity:
+    # cumulative = total + initial, balance = cumulative - redeemed
+    total_points = int(round(float(student_dict.get('total_points') or 0.0)))
+    initial_points = int(round(float(student_dict.get('initial_points') or 0.0)))
+    redeemed_points = int(round(float(student_dict.get('redeemed_points') or 0.0)))
+    negative_points = int(round(float(student_dict.get('negative_points') or 0.0)))
+    total_count = int(round(float(student_dict.get('total_count') or 0.0)))
+
+    student_dict['total_points'] = total_points
+    student_dict['initial_points'] = initial_points
+    student_dict['redeemed_points'] = redeemed_points
+    student_dict['cumulative_points'] = total_points + initial_points
+    student_dict['balance_points'] = student_dict['cumulative_points'] - redeemed_points
+    student_dict['negative_points'] = negative_points
+    student_dict['total_count'] = total_count
     
     conn.close()
     return student_dict
@@ -318,25 +341,25 @@ def get_student_performance(roll_no):
         conn.close()
         return None
         
-    pts = student['total_points']
+    pts = student['cumulative_points'] if student['cumulative_points'] is not None else (student['total_points'] or 0) + (student['initial_points'] or 0)
     dept = student['department']
     yr = student['year']
     
-    cursor.execute("SELECT AVG(total_points) FROM students WHERE department = ?", (dept,))
+    cursor.execute("SELECT AVG(cumulative_points) FROM students WHERE department = ?", (dept,))
     dept_avg = cursor.fetchone()[0] or 0.0
     
-    cursor.execute("SELECT AVG(total_points) FROM students WHERE year = ?", (yr,))
+    cursor.execute("SELECT AVG(cumulative_points) FROM students WHERE year = ?", (yr,))
     year_avg = cursor.fetchone()[0] or 0.0
     
     cursor.execute("SELECT COUNT(*) FROM students WHERE department = ?", (dept,))
     dept_total = cursor.fetchone()[0] or 1
     
-    cursor.execute("SELECT COUNT(*) FROM students WHERE department = ? AND total_points > ?", (dept, pts))
+    cursor.execute("SELECT COUNT(*) FROM students WHERE department = ? AND cumulative_points > ?", (dept, pts))
     dept_higher = cursor.fetchone()[0] or 0
     percentile = int(round((1 - (dept_higher / dept_total)) * 100))
     if percentile == 100 and dept_higher > 0: percentile = 99
     
-    cursor.execute("SELECT total_points FROM students WHERE department = ? AND year = ?", (dept, yr))
+    cursor.execute("SELECT cumulative_points FROM students WHERE department = ? AND year = ?", (dept, yr))
     cohort_points = [r[0] for r in cursor.fetchall()]
     
     buckets = {"0-1k": 0, "1k-2k": 0, "2k-3k": 0, "3k-4k": 0, "4k-5k": 0, "5k-6k": 0, "6k+": 0}
@@ -356,12 +379,12 @@ def get_student_performance(roll_no):
     term_delta = round(pts * 0.15, 2)
     
     return {
-        "student_points": round(pts, 2),
-        "dept_avg": round(dept_avg, 2),
-        "year_avg": round(year_avg, 2),
+        "student_points": int(round(pts)),
+        "dept_avg": int(round(dept_avg)),
+        "year_avg": int(round(year_avg)),
         "percentile": percentile,
         "histogram": histogram,
-        "term_delta": term_delta
+        "term_delta": int(round(term_delta))
     }
 
 def get_student_extended_profile(roll_no):
@@ -389,9 +412,9 @@ def get_student_extended_profile(roll_no):
     else:
         shares = [rng.uniform(0.5, 1.5) for _ in range(current_year_num)]
         total_shares = sum(shares)
-        distributed_pts = [round((s / total_shares) * total_pts, 2) for s in shares]
+        distributed_pts = [int(round((s / total_shares) * total_pts)) for s in shares]
         diff = total_pts - sum(distributed_pts)
-        distributed_pts[-1] = round(distributed_pts[-1] + diff, 2)
+        distributed_pts[-1] = int(distributed_pts[-1] + diff)
         romans = ["I", "II", "III", "IV"]
         for idx, pts in enumerate(distributed_pts):
             yearly_data.append({"year": f"Year {romans[idx]}", "points": pts})
@@ -405,7 +428,7 @@ def get_student_extended_profile(roll_no):
     month_shares = [rng.uniform(0.2, 1.8) for _ in months]
     total_month_shares = sum(month_shares)
     for i, m in enumerate(months):
-        monthly_trend[m] = round((month_shares[i] / total_month_shares) * total_pts, 2)
+        monthly_trend[m] = int(round((month_shares[i] / total_month_shares) * total_pts))
     
     monthly_data = [{"month": m, "points": monthly_trend[m]} for m in months]
     most_active_month = max(monthly_data, key=lambda x: x['points'])['month']
@@ -465,10 +488,10 @@ def get_leaderboard(limit=15, offset=0, department=None, year=None, engagement_g
         
         d = dict(r)
         d['rank'] = rank
-        # Round numeric fields
+        # Round numeric fields to whole integers
         for field in ['total_points', 'balance_points', 'redeemed_points', 'cumulative_points']:
             if field in d and d[field] is not None:
-                d[field] = round(float(d[field]), 2)
+                d[field] = int(round(float(d[field])))
         leaderboard.append(d)
         
     conn.close()
@@ -612,24 +635,24 @@ def get_student_analytics_data(roll_no):
             "year": dt.year,
             "category": tx['category'],
             "description": tx['description'],
-            "points": round(tx['points'], 2),
+                "points": int(tx['points']),
             "status": tx['status']
         })
         
     days_of_week = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
-    weekly_trend = {d: 0.0 for d in days_of_week}
+    weekly_trend = {d: 0 for d in days_of_week}
     for tx in formatted_transactions:
         day = tx['day']
-        weekly_trend[day] = round(weekly_trend[day] + tx['points'], 2)
+        weekly_trend[day] = round(weekly_trend[day] + tx['points'])
         
     weekly_data = [{"day": d, "points": weekly_trend[d]} for d in days_of_week]
     
     months = ["July", "August", "September", "October", "November", "December", "January", "February", "March", "April", "May", "June"]
-    monthly_trend = {m: 0.0 for m in months}
+    monthly_trend = {m: 0 for m in months}
     for tx in formatted_transactions:
         month = tx['month']
         if month in monthly_trend:
-            monthly_trend[month] = round(monthly_trend[month] + tx['points'], 2)
+            monthly_trend[month] = round(monthly_trend[month] + tx['points'])
             
     monthly_data = [{"month": m, "points": monthly_trend[m]} for m in months]
     
@@ -645,13 +668,13 @@ def get_student_analytics_data(roll_no):
     total_pts = student['total_points']
     
     if current_year_num == 1:
-        yearly_data.append({"year": "Year I", "points": total_pts})
+        yearly_data.append({"year": "Year I", "points": int(round(total_pts))})
     else:
         shares = [rng.uniform(0.5, 1.5) for _ in range(current_year_num)]
         total_shares = sum(shares)
-        distributed_pts = [round((s / total_shares) * total_pts, 2) for s in shares]
+        distributed_pts = [int(round((s / total_shares) * total_pts)) for s in shares]
         diff = total_pts - sum(distributed_pts)
-        distributed_pts[-1] = round(distributed_pts[-1] + diff, 2)
+        distributed_pts[-1] = int(distributed_pts[-1] + diff)
         
         romans = ["I", "II", "III", "IV"]
         for idx, pts in enumerate(distributed_pts):
@@ -660,7 +683,7 @@ def get_student_analytics_data(roll_no):
     heatmap_dict = {}
     for tx in formatted_transactions:
         date_str = tx['date']
-        heatmap_dict[date_str] = round(heatmap_dict.get(date_str, 0.0) + tx['points'], 2)
+        heatmap_dict[date_str] = round(heatmap_dict.get(date_str, 0.0) + tx['points'])
         
     heatmap_data = [{"date": k, "points": v} for k, v in heatmap_dict.items()]
     
@@ -709,9 +732,9 @@ def get_admin_hierarchy():
                     ORDER BY total_points DESC LIMIT 5
                 """, (dept, yr))
                 top_students = [dict(s) for s in cursor.fetchall()]
-                # Round points in top_students
+                # Round points in top_students to whole integers
                 for s in top_students:
-                    s['total_points'] = round(float(s['total_points']), 2)
+                    s['total_points'] = int(round(float(s['total_points'])))
                 
                 years_list.append({
                     "year": yr,

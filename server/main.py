@@ -10,6 +10,8 @@ from datetime import datetime
 
 import db
 import ai
+import nl_sql
+import ml_model
 
 app = FastAPI(title="Student Reward Intelligence API", version="1.0.0")
 
@@ -21,6 +23,15 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+@app.on_event("startup")
+def initialize_ml_caches():
+    ml_model.refresh_view_suggestion_cache()
+    ml_model.start_view_suggestion_cache_refresh()
+    ml_model.refresh_severity_cache()
+    ml_model.start_severity_cache_refresh()
+    ml_model.start_background_recompute()
 
 # ─── Pydantic Models ──────────────────────────────────────────
 class TemplateUpdate(BaseModel):
@@ -147,6 +158,15 @@ def query_assistant(
 ):
     return ai.parse_natural_language_query(q, context_role, context_dept)
 
+
+@app.get("/api/nl-sql-search")
+def nl_sql_search(
+    q: str = Query(..., description="Natural language search query from admin/mentor"),
+    context_role: Optional[str] = None,
+    context_dept: Optional[str] = None
+):
+    return nl_sql.run_nl_sql_search(q, context_role, context_dept)
+
 @app.get("/api/alerts")
 def get_alerts(ip_date: Optional[str] = None):
     return ai.detect_policy_alerts(ip_date)
@@ -165,6 +185,16 @@ def get_student_analytics(roll_no: str):
 @app.get("/api/admin/hierarchy")
 def get_admin_hierarchy():
     return db.get_admin_hierarchy()
+
+
+@app.get("/api/ml/severity-tiers")
+def get_severity_tiers():
+    cache = ml_model.refresh_severity_cache() if not ml_model._SEVERITY_CACHE.get('ready') else ml_model._SEVERITY_CACHE
+    return {
+        "generated_at": cache.get("generated_at"),
+        "summaries": cache.get("summaries", []),
+        "assignments": cache.get("assignments", {}),
+    }
 
 
 # ─── New Notification Templates Endpoints ────────────────────────
@@ -520,8 +550,8 @@ def import_commit(payload: CommitImportPayload):
             cnt = r.get("activity_count") or 1
             
             try:
-                pts = float(pts) if pts is not None else 0.0
-                cnt = float(cnt)
+                pts = int(round(float(pts))) if pts is not None else 0
+                cnt = int(round(float(cnt))) if cnt is not None else 1
             except (ValueError, TypeError):
                 skipped_count += 1
                 skipped_reasons.append(f"Row skipped: non-numeric points or count for {roll}")
@@ -540,11 +570,11 @@ def import_commit(payload: CommitImportPayload):
                 VALUES (?, ?, ?, ?)
             """, (roll, category, cnt, pts))
             
-            # Update student total/balance points
+            # Update student total/balance points as whole integers
             cursor.execute("""
                 UPDATE students 
-                SET total_points = total_points + ?,
-                    balance_points = balance_points + ?
+                SET total_points = CAST(ROUND(total_points + ?) AS INTEGER),
+                    balance_points = CAST(ROUND(balance_points + ?) AS INTEGER)
                 WHERE roll_no = ?
             """, (pts, pts, roll))
             
@@ -562,6 +592,14 @@ def import_commit(payload: CommitImportPayload):
         "skipped_count": skipped_count,
         "reasons": skipped_reasons[:20]
     }
+
+
+@app.get("/api/ml/student-recommendations/{roll_no}")
+def get_student_recommendations(roll_no: str):
+    res = ml_model.predict_point_recommendations(roll_no.upper())
+    if not res:
+        raise HTTPException(status_code=404, detail="Student not found for AI recommendation model.")
+    return res
 
 
 if __name__ == "__main__":

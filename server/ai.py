@@ -342,10 +342,10 @@ def parse_natural_language_query(query: str, context_role: str = None, context_d
     results = []
     for r in rows:
         d = dict(r)
-        # Round numeric fields
+        # Round numeric point fields to whole integers
         for field in ['total_points', 'balance_points', 'redeemed_points', 'cumulative_points', 'negative_points']:
             if field in d and d[field] is not None:
-                d[field] = round(float(d[field]), 2)
+                d[field] = int(round(float(d[field])))
         results.append(d)
         
     # Calculate aggregate values for the matching filters
