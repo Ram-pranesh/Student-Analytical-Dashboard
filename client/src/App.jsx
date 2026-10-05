@@ -14,7 +14,7 @@ import {
 
 const API_BASE = import.meta.env.VITE_API_BASE || "http://127.0.0.1:8000/api";
 
-// ─── Icons ───────────────────────────────────────────────────
+// --- Icons ---------------------------------------------------
 const StarCoinIcon = ({ size = 24, fill = "currentColor", opacity = 1 }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ opacity }}>
     <circle cx="12" cy="12" r="10" stroke={fill} strokeWidth="1.5" />
@@ -23,7 +23,7 @@ const StarCoinIcon = ({ size = 24, fill = "currentColor", opacity = 1 }) => (
   </svg>
 );
 
-// ─── Formatters ──────────────────────────────────────────────
+// --- Formatters ----------------------------------------------
 const fmt = (v) => {
   if (v === null || v === undefined) return '—';
   const n = parseFloat(v);
@@ -37,16 +37,37 @@ const fmtInt = (v) => {
   return Math.round(parseFloat(v)).toLocaleString();
 };
 
-// ─── Chart colours ───────────────────────────────────────────
-const CHART_COLORS = [
-  '#C49A3C', '#3A7A7A', '#D4922A', '#7A6A4A', '#5A8A8A',
-  '#A07A30', '#2A6060', '#B46830', '#6A8A5A', '#8A6A3A'
+// --- Categorical Palette (11 categories — bright-but-modest, cool lean) -
+const CATEGORY_COLOR_MAP = {
+  'Technical Events': '#1E88C7',
+  'Skills': '#15A89A',
+  'Assignments': '#7B5FE0',
+  'Interviews': '#C24A86',
+  'Exams': '#6B7280',
+  'Faculty Initiatives': '#3F9142',
+  'Lab Initiatives': '#B8742E',
+  'Special Lab Initiatives': '#9C4FA0',
+  'Special Lab Init.': '#9C4FA0',
+  'Extra-Curricular': '#4F8F8F',
+  'Student Initiatives': '#B07A5A',
+  'External Events': '#8A6D3F'
+};
+
+const getCategoryColor = (cat, idx = 0) => {
+  if (cat && CATEGORY_COLOR_MAP[cat]) return CATEGORY_COLOR_MAP[cat];
+  const keys = Object.keys(CATEGORY_COLOR_MAP);
+  return CATEGORY_COLOR_MAP[keys[idx % keys.length]] || '#2F5FD6';
+};
+
+const CATEGORY_COLORS = [
+  '#1E88C7', '#15A89A', '#7B5FE0', '#C24A86', '#6B7280',
+  '#3F9142', '#B8742E', '#9C4FA0', '#4F8F8F', '#B07A5A', '#8A6D3F'
 ];
 
-// Curated muted 5-colour donut palette — no rainbow, all from existing token family
-const DONUT_COLORS = ['#C49A3C', '#3A7A7A', '#7A6A4A', '#D4922A', '#8A9AA8'];
+const CHART_COLORS = CATEGORY_COLORS;
 
-// ─── Dept abbreviation ────────────────────────────────────────
+
+// --- Dept abbreviation ----------------------------------------
 const abbreviateDept = (dept) => {
   if (!dept) return '';
   const map = {
@@ -73,7 +94,7 @@ const abbreviateDept = (dept) => {
   return map[dept] || dept.split(' ').map(w => w[0]).join('');
 };
 
-// ─── Mentor roster (12 unique names) ─────────────────────────
+// --- Mentor roster (12 unique names) -------------------------
 const MENTOR_ROSTER = [
   { name: 'Dr. Meena Ravishankar', short: 'Dr. M. Ravishankar', id: 'meena' },
   { name: 'Prof. Arjun Subramanian', short: 'Prof. A. Subramanian', id: 'arjun' },
@@ -89,7 +110,7 @@ const MENTOR_ROSTER = [
   { name: 'Prof. Divya Arunachalam', short: 'Prof. D. Arunachalam', id: 'divya' },
 ];
 
-// ─── Animated counter hook (respects prefers-reduced-motion) ─
+// --- Animated counter hook (respects prefers-reduced-motion) -
 function useAnimatedCounter(target, duration = 700) {
   const [value, setValue] = useState(0);
   const rafRef = useRef(null);
@@ -112,7 +133,7 @@ function useAnimatedCounter(target, duration = 700) {
   return value;
 }
 
-// ─── Tooltip ─────────────────────────────────────────────────
+// --- Tooltip -------------------------------------------------
 const CustomTooltip = ({ active, payload, label }) => {
   if (active && payload && payload.length) {
     return (
@@ -129,7 +150,7 @@ const CustomTooltip = ({ active, payload, label }) => {
   return null;
 };
 
-// ─── Stamp Track (kept for Admin drawer overview tab only) ───
+// --- Stamp Track (kept for Admin drawer overview tab only) ---
 function StampTrack({ earned, total, size = 'sm', showLabel = true }) {
   const stamps = Array.from({ length: total }, (_, i) => i < earned);
   return (
@@ -148,7 +169,7 @@ function StampTrack({ earned, total, size = 'sm', showLabel = true }) {
   );
 }
 
-// ─── Calendar Heatmap ────────────────────────────────────────
+// --- Calendar Heatmap ----------------------------------------
 function CalendarHeatmap({ heatmapData }) {
   if (!heatmapData || heatmapData.length === 0) return null;
   const pointsMap = {};
@@ -171,8 +192,10 @@ function CalendarHeatmap({ heatmapData }) {
   weeks.forEach((wk, wi) => { wk.forEach(c => { if (c && c.dayOfWeek === 0 && !monthPos[c.month]) monthPos[c.month] = wi; }); });
   const getCellColor = (pts) => {
     if (!pts || pts === 0) return 'var(--paper-mid)';
-    if (pts < 20) return '#E8D090'; if (pts < 60) return '#D4A84A';
-    if (pts < 120) return '#C49A3C'; return '#9A7220';
+    if (pts < 20) return '#C7D7F9';
+    if (pts < 60) return '#8DAEF4';
+    if (pts < 120) return '#5584EE';
+    return '#2F5FD6';
   };
   return (
     <div>
@@ -200,20 +223,20 @@ function CalendarHeatmap({ heatmapData }) {
       </div>
       <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginTop: 6, fontSize: 9, color: 'var(--fog)' }}>
         <span>Less</span>
-        {['var(--paper-mid)', '#E8D090', '#D4A84A', '#C49A3C', '#9A7220'].map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 1, backgroundColor: c }} />)}
+        {['var(--paper-mid)', '#C7D7F9', '#8DAEF4', '#5584EE', '#2F5FD6'].map((c, i) => <div key={i} style={{ width: 10, height: 10, borderRadius: 1, backgroundColor: c }} />)}
         <span>More</span>
       </div>
     </div>
   );
 }
 
-// ─── Status Badge ─────────────────────────────────────────────
+// --- Status Badge ---------------------------------------------
 function StatusBadge({ level, label }) {
   const configs = {
-    high: { cls: 'status-teal', icon: '●' },
-    medium: { cls: 'status-amber', icon: '▲' },
-    low: { cls: 'status-coral', icon: '■' },
-    neutral: { cls: 'status-neutral', icon: '○' },
+    high: { cls: 'status-teal' },
+    medium: { cls: 'status-amber' },
+    low: { cls: 'status-coral' },
+    neutral: { cls: 'status-neutral' },
   };
   const key = (level || '').toLowerCase();
   const c = configs[key] || configs.neutral;
@@ -230,7 +253,7 @@ function StatusBadge({ level, label }) {
   );
 }
 
-// ─── Pod Cluster ─────────────────────────────────────────────
+// --- Pod Cluster ---------------------------------------------
 function PodCluster({ students, onStudentClick }) {
   if (!students || students.length === 0) return null;
   const getStatus = s => s.engagement_group === 'High' ? 'teal' : s.engagement_group === 'Medium' ? 'amber' : 'coral';
@@ -238,7 +261,7 @@ function PodCluster({ students, onStudentClick }) {
     <div className="pod-cluster" role="group" aria-label="Student pod cluster">
       {students.map((s, i) => (
         <div key={s.roll_no || i} className={`pod-avatar pod-avatar-${getStatus(s)}`}
-          title={`${s.student_name || 'Student'} — ${s.engagement_group || ''} · ${s.total_points || 0} pts`}
+          title={`${s.student_name || 'Student'} - ${s.engagement_group || ''} - ${s.total_points || 0} pts`}
           onClick={() => onStudentClick && onStudentClick(s.roll_no)}
           role="button" tabIndex={0} aria-label={`${s.student_name}, ${s.engagement_group}`}
           onKeyDown={e => e.key === 'Enter' && onStudentClick && onStudentClick(s.roll_no)} />
@@ -250,7 +273,7 @@ function PodCluster({ students, onStudentClick }) {
   );
 }
 
-// ─── Alert Badge Card (one-time entrance pulse for High) ─────
+// --- Alert Badge Card (one-time entrance pulse for High) -----
 function AlertBadgeCard({ alert, pulseOnMount = false }) {
   const [expanded, setExpanded] = useState(false);
   const [doPulse, setDoPulse] = useState(false);
@@ -287,7 +310,7 @@ function AlertBadgeCard({ alert, pulseOnMount = false }) {
   );
 }
 
-// ─── Grouped Alert Card (collapses duplicate-title alerts) ───
+// --- Grouped Alert Card (collapses duplicate-title alerts) ---
 function GroupedAlertCard({ title, alerts, severity }) {
   const [expanded, setExpanded] = useState(false);
   const sev = {
@@ -325,57 +348,9 @@ function GroupedAlertCard({ title, alerts, severity }) {
   );
 }
 
-// ─── Visual Insights strip (updated labels + abbreviations) ──
-function VisualInsightStrip({ kpis, deptStats, catStats }) {
-  if (!kpis) return null;
-  const bestDept = deptStats.length ? [...deptStats].sort((a, b) => b.avg_points - a.avg_points)[0] : null;
-  const topCat = catStats.length ? catStats[0] : null;
-  const atRiskPct = kpis.total_students ? Math.round((kpis.at_risk_students / kpis.total_students) * 100) : 0;
-  const topCatPct = catStats.length && catStats.reduce((s, c) => s + c.total_points, 0) > 0
-    ? Math.round((catStats[0].total_points / catStats.reduce((s, c) => s + c.total_points, 0)) * 100) : 0;
-  const avgBalancePoints = deptStats.length ? Math.round(deptStats.reduce((s, d) => s + (d.avg_balance_points || d.avg_points || 0), 0) / deptStats.length) : 0;
-  const tiles = [
-    {
-      label: 'Top Department', accent: 'var(--teal)', icon: <CheckCircle size={20} color="var(--teal)" aria-hidden="true" />,
-      title: bestDept ? abbreviateDept(bestDept.department) : '—', fullTitle: bestDept?.department || '',
-      value: bestDept ? `${fmt(bestDept.avg_points)} avg pts` : '—'
-    },
-    {
-      label: 'At Risk', accent: 'var(--coral)', icon: <TriangleAlert size={20} color="var(--coral)" aria-hidden="true" />,
-      title: `${fmtInt(kpis.at_risk_students)}`, fullTitle: '',
-      value: `${atRiskPct}% of total`
-    },
-    {
-      label: 'Top Category', accent: 'var(--brass)', icon: <Layers size={20} color="var(--brass)" aria-hidden="true" />,
-      title: topCat ? topCat.category?.split(' ').slice(0, 2).join(' ') : '—', fullTitle: topCat?.category || '',
-      value: `${topCatPct}% of total`
-    },
-    {
-      label: 'Avg Balance', accent: 'var(--amber)', icon: <TrendingUp size={20} color="var(--amber)" aria-hidden="true" />,
-      title: fmtInt(avgBalancePoints), fullTitle: '',
-      value: `institution avg`
-    },
-  ];
-  return (
-    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 1, border: '1px solid var(--cloud)', borderRadius: 4, overflow: 'hidden', marginBottom: 24, background: 'var(--cloud)' }}>
-      {tiles.map((tile, i) => (
-        <div key={i} className="kpi-insight-tile"
-          style={{ background: 'var(--paper)', padding: '20px 24px', display: 'flex', gap: 16, alignItems: 'center', borderLeft: `3px solid ${tile.accent}` }}>
-          <div style={{ width: 48, height: 48, borderRadius: '50%', background: `color-mix(in srgb, ${tile.accent} 15%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-            {tile.icon}
-          </div>
-          <div>
-            <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fog)', marginBottom: 4 }}>{tile.label}</div>
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.1, marginBottom: 4 }} title={tile.fullTitle}>{tile.title}</div>
-            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 12, fontWeight: 600, color: tile.accent }}>{tile.value}</div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
 
-// ─── Points Ticker (founder demo — deterministic seed increment) ──
+
+// --- Points Ticker (founder demo — deterministic seed increment) --
 function PointsTicker({ baseValue }) {
   const [display, setDisplay] = useState(baseValue || 0);
   const timerRef = useRef(null);
@@ -402,7 +377,7 @@ function PointsTicker({ baseValue }) {
   );
 }
 
-// ─── Student Category Totals ranked brass bars ────────────────────
+// --- Student Category Totals ranked brass bars --------------------
 function StudentCategoryBars({ breakdown }) {
   const [collapsed, setCollapsed] = useState(true);
   if (!breakdown) return null;
@@ -420,7 +395,7 @@ function StudentCategoryBars({ breakdown }) {
             <div style={{ fontWeight: 600, fontSize: 12, color: 'var(--ink)' }}>{cat.category}</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flex: 1 }}>
               <div style={{ flex: 1, height: 8, background: 'var(--paper-mid)', borderRadius: 4, overflow: 'hidden' }}>
-                <div style={{ width: `${(cat.points / maxVal) * 100}%`, height: '100%', background: 'var(--brass)' }} />
+                <div style={{ width: `${(cat.points / maxVal) * 100}%`, height: '100%', background: getCategoryColor(cat.category, i) }} />
               </div>
               <span style={{ fontSize: 10, color: 'var(--fog)', flexShrink: 0 }}>{cat.count} activities</span>
             </div>
@@ -449,7 +424,7 @@ function StudentCategoryBars({ breakdown }) {
   );
 }
 
-// ─── Main App ─────────────────────────────────────────────────
+// --- Main App -------------------------------------------------
 function App() {
   const [theme, setTheme] = useState('light');
   const [role, setRole] = useState('admin');
@@ -462,8 +437,8 @@ function App() {
   // Admin data
   const [kpis, setKpis] = useState(null);
   const [deptStats, setDeptStats] = useState([]);
-  const [deptBalanceData, setDeptBalanceData] = useState([]);
-  const [deptYearFilter, setDeptYearFilter] = useState('I');
+  const [deptChartData, setDeptChartData] = useState([]);
+  const deptPerfCacheRef = useRef({});
   const [catStats, setCatStats] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [adminHierarchy, setAdminHierarchy] = useState([]);
@@ -610,7 +585,7 @@ function App() {
     }
   };
 
-  // ─── NEW SPRINT 2 FEATURES STATE ────────────────────────────────
+  // --- NEW SPRINT 2 FEATURES STATE --------------------------------
   const [templates, setTemplates] = useState([]);
   const [selectedTemplate, setSelectedTemplate] = useState("IP Redemption Risk");
   const [tempSubject, setTempSubject] = useState("");
@@ -641,6 +616,9 @@ function App() {
   // Settings view sub-tabs: 'templates' | 'import' | 'audit'
   const [settingsSubTab, setSettingsSubTab] = useState("templates");
 
+  // Overview KPI synchronized year filter: 'Overall' | 'Year 1' | 'Year 2' | 'Year 3' | 'Year 4'
+  const [overviewYear, setOverviewYear] = useState('Overall');
+
   // CSV Import State
   const [importType, setImportType] = useState("students");
   const [importFile, setImportFile] = useState(null);
@@ -651,47 +629,56 @@ function App() {
   const [importProgress, setImportProgress] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
-  // ── Theme
+  // -- Theme
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
     document.body.setAttribute('data-theme', theme);
   }, [theme]);
 
-  // ── ESC exits presentation mode
+  // -- ESC exits presentation mode
   useEffect(() => {
     const onKey = (e) => { if (e.key === 'Escape' && presentationMode) setPresentationMode(false); };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [presentationMode]);
 
-  // ── Admin/Mentor bootstrap
+  // -- Admin/Mentor bootstrap
   useEffect(() => {
     if (isLoggedIn && (role === 'admin' || role === 'mentor')) {
       fetchKpis(); fetchDeptStats(); fetchCatStats();
       fetchAlerts(); fetchAdminHierarchy(); fetchLeaderboard(true);
-      fetchDeptBalance('I');
+      fetchDeptPerformance(overviewYear);
       fetchTemplates();
       fetchAuditLogs();
     }
   }, [isLoggedIn, role]);
 
   useEffect(() => { if (isLoggedIn && (role === 'admin' || role === 'mentor')) fetchLeaderboard(true); }, [filterDept, filterYear, filterGroup, sortOrder]);
-  useEffect(() => { if (isLoggedIn && (role === 'admin' || role === 'mentor')) fetchDeptBalance(deptYearFilter); }, [deptYearFilter]);
+  useEffect(() => { if (isLoggedIn && (role === 'admin' || role === 'mentor')) fetchDeptPerformance(overviewYear); }, [overviewYear, isLoggedIn, role]);
 
-  // ── Student bootstrap
+  // -- Student bootstrap
   useEffect(() => { if (isLoggedIn && role === 'student' && username) fetchStudentDashboard(username); }, [isLoggedIn, role, username]);
   useEffect(() => { if (isLoggedIn && role === 'student' && personalData) fetchPeers(); }, [peerTab, personalData]);
 
-  // ── Fetchers
+  // -- Fetchers
   const fetchKpis = async () => { try { setKpis(await (await fetch(`${API_BASE}/kpis`)).json()); } catch { } };
   const fetchDeptStats = async () => { try { setDeptStats(await (await fetch(`${API_BASE}/departments`)).json()); } catch { } };
   const fetchCatStats = async () => { try { setCatStats(await (await fetch(`${API_BASE}/categories`)).json()); } catch { } };
   const fetchAlerts = async () => { try { setAlerts(await (await fetch(`${API_BASE}/alerts${ipRedemptionDate ? '?ip_date=' + encodeURIComponent(ipRedemptionDate) : ''}`)).json()); } catch { } };
   const fetchAdminHierarchy = async () => { try { setAdminHierarchy(await (await fetch(`${API_BASE}/admin/hierarchy`)).json()); } catch { } };
-  const fetchDeptBalance = async (year) => {
+  const fetchDeptPerformance = async (year) => {
+    const yrKey = year || 'Overall';
+    if (deptPerfCacheRef.current[yrKey]) {
+      setDeptChartData(deptPerfCacheRef.current[yrKey]);
+    }
     try {
-      const url = year && year !== 'All' ? `${API_BASE}/departments/balance?year=${encodeURIComponent(year)}` : `${API_BASE}/departments/balance`;
-      setDeptBalanceData(await (await fetch(url)).json());
+      const yrParam = (yrKey !== 'Overall' && yrKey !== 'All') ? `?year=${encodeURIComponent(yrKey)}` : '';
+      const res = await fetch(`${API_BASE}/departments/performance${yrParam}`);
+      if (res.ok) {
+        const data = await res.json();
+        deptPerfCacheRef.current[yrKey] = data;
+        setDeptChartData(data);
+      }
     } catch { }
   };
   const fetchLeaderboard = async (reset = false) => {
@@ -843,7 +830,7 @@ function App() {
     a.download = 'students.csv'; a.click();
   };
 
-  // ── Helpers
+  // -- Helpers
   const ptsToStamps = (pts, maxS = 20, ptsPS = 50) => ({ earned: Math.min(Math.floor(pts / ptsPS), maxS), total: maxS });
 
   // Add 2 more mentors: total 8 pods (up from 6)
@@ -888,7 +875,7 @@ function App() {
     };
   };
 
-  // ── Group alerts by base title (collapses "Unbalanced High Performer: Name" to "Unbalanced High Performer")
+  // -- Group alerts by base title (collapses "Unbalanced High Performer: Name" to "Unbalanced High Performer")
   const groupAlerts = (alertList) => {
     const grouped = {};
     alertList.forEach(alert => {
@@ -903,7 +890,7 @@ function App() {
     return Object.values(grouped);
   };
 
-  // ── Templates Rendering
+  // -- Templates Rendering
   const renderTemplateString = (str, data) => {
     let out = str || "";
     Object.entries(data).forEach(([k, v]) => {
@@ -1062,7 +1049,7 @@ function App() {
     setComposeOpen(false);
   };
 
-  // ── CSV Import Handling
+  // -- CSV Import Handling
   const handleFileChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -1138,36 +1125,38 @@ function App() {
     }
   };
 
-  // ── Animated KPI counters
-  const animTotal = useAnimatedCounter(kpis?.total_students);
-  const animAvg = useAnimatedCounter(kpis?.avg_points);
-  const animAtRisk = useAnimatedCounter(kpis?.at_risk_students);
-  const animLab = useAnimatedCounter(kpis?.total_lab_points);
-  const animActive = useAnimatedCounter(kpis ? kpis.total_students - kpis.at_risk_students : 0);
+  // -- Synchronized Overview KPI Stats
+  const currentOverviewStats = (overviewYear !== 'Overall' && kpis?.by_year?.[overviewYear])
+    ? kpis.by_year[overviewYear]
+    : {
+      total_students: kpis?.total_students ?? 0,
+      active_students: kpis?.active_students ?? 0,
+      inactive_students: kpis?.inactive_students ?? 0,
+      top_department: kpis?.top_department || '—',
+      top_dept_avg_pts: kpis?.top_dept_avg_pts || 0
+    };
 
-  // ══════════════════════════════════════════════════
+  const animOverviewTotal = useAnimatedCounter(currentOverviewStats.total_students);
+  const animOverviewActive = useAnimatedCounter(currentOverviewStats.active_students);
+  const animOverviewInactive = useAnimatedCounter(currentOverviewStats.inactive_students);
+
+
+
+  // ──────────────────────────────────────────────────
   //  LOGIN
-  // ══════════════════════════════════════════════════
+  // ──────────────────────────────────────────────────
   if (!isLoggedIn) {
     return (
       <div className="login-shell" data-theme={theme}>
         <div className="login-panel-left">
           <div>
-            <StarCoinIcon size={32} fill="#D4A84A" />
-            <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 700, color: '#EDE8DF', lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 16, marginTop: 24 }}>
-              Reward<br /><span style={{ color: '#D4A84A' }}>Points</span><br />Platform
+            <StarCoinIcon size={32} fill="var(--brass)" />
+            <div style={{ fontFamily: 'var(--font-display)', fontSize: 40, fontWeight: 700, color: '#FFFFFF', lineHeight: 1.1, letterSpacing: '-0.02em', marginBottom: 16, marginTop: 24 }}>
+              Reward<br /><span style={{ color: 'var(--brass)' }}>Points</span><br />Platform
             </div>
-            <p style={{ fontSize: 14, color: 'rgba(237,232,223,0.55)', lineHeight: 1.65, maxWidth: 300 }}>
+            <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.75)', lineHeight: 1.65, maxWidth: 300 }}>
               Academic milestones, behavioral recognition, and mentor-guided progress — tracked in one place.
             </p>
-          </div>
-          <div style={{ display: 'flex', gap: 24, marginTop: 48, paddingTop: 24, borderTop: '1px solid rgba(237,232,223,0.12)' }}>
-            {[['2,400+', 'Students'], ['13', 'Departments'], ['1:20', 'Mentor ratio']].map(([n, l]) => (
-              <div key={l}>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 26, fontWeight: 700, color: '#D4A84A', lineHeight: 1 }}>{n}</div>
-                <div style={{ fontSize: 11, color: 'rgba(237,232,223,0.4)', marginTop: 3 }}>{l}</div>
-              </div>
-            ))}
           </div>
         </div>
         <div className="login-panel-right">
@@ -1195,7 +1184,7 @@ function App() {
                 Sign in <ArrowRight size={15} aria-hidden="true" />
               </button>
             </form>
-            <div style={{ marginTop: 32, textAlign: 'center', fontSize: 10, color: 'rgba(237,232,223,0.3)' }}>
+            <div style={{ marginTop: 32, textAlign: 'center', fontSize: 10, color: 'var(--fog)' }}>
               <a href="https://www.flaticon.com/free-icons/poin" title="poin icons" style={{ color: 'inherit', textDecoration: 'none' }}>Poin icons created by Arkinasi - Flaticon</a>
             </div>
           </div>
@@ -1204,9 +1193,9 @@ function App() {
     );
   }
 
-  // ══════════════════════════════════════════════════
+  // ──────────────────────────────────────────────────
   //  ADMIN / MENTOR VIEW
-  // ══════════════════════════════════════════════════
+  // ──────────────────────────────────────────────────
   if (role === 'admin' || role === 'mentor') {
     const mentorPods = buildMentorPods();
     const { depts: hmDepts } = buildAlertHeatmap();
@@ -1243,7 +1232,7 @@ function App() {
         {!presentationMode && (
           <aside className="sidebar" aria-label="Main navigation">
             <div className="sidebar-brand">
-              <div className="sidebar-brand-mark" aria-hidden="true"><StarCoinIcon size={26} fill="#C49A3C" /></div>
+              <div className="sidebar-brand-mark" aria-hidden="true"><StarCoinIcon size={26} fill="var(--brass)" /></div>
               <div className="sidebar-brand-name">Reward Points<span>{isMentor ? 'Mentor Portal' : 'Academic Platform'}</span></div>
             </div>
             <nav className="sidebar-nav" aria-label="Primary navigation">
@@ -1270,10 +1259,10 @@ function App() {
               </div>
               <div className="sidebar-footer-actions">
                 <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} className="icon-btn"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(244,240,232,0.6)' }}
+                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)' }}
                   aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}>{theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}</button>
                 <button onClick={handleLogout} className="icon-btn icon-btn-danger"
-                  style={{ background: 'rgba(212,95,80,0.12)', border: '1px solid rgba(212,95,80,0.25)', color: 'var(--coral)' }}
+                  style={{ background: 'var(--coral-light)', border: '1px solid var(--coral-mid)', color: 'var(--coral)' }}
                   aria-label="Log out"><LogOut size={13} /></button>
               </div>
             </div>
@@ -1306,7 +1295,7 @@ function App() {
               {!isMentor && !presentationMode && activeTab !== 'settings' && (
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--paper)', padding: '6px 10px', borderRadius: 4, border: '1px solid var(--cloud)' }}>
                   <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--ink)' }}><CalendarDays size={13} style={{ verticalAlign: 'text-bottom', marginRight: 4 }} />IP Deadline:</span>
-                  <input type="date" className="ui-select" style={{ padding: '4px 8px', fontSize: 11 }}
+                  <input type="date" className="ui-select" style={{ padding: '4px 8px', fontSize: 11, backgroundImage: 'none' }}
                     value={ipRedemptionDate} onChange={e => { setIpRedemptionDate(e.target.value); localStorage.setItem('ipRedemptionDate', e.target.value); }} />
                 </div>
               )}
@@ -1314,7 +1303,7 @@ function App() {
                 <form onSubmit={e => { e.preventDefault(); if (adminSearch.trim()) { openStudentDrawer(adminSearch.trim().toUpperCase()); setAdminSearch(''); } }}>
                   <div className="search-input-wrap" role="search">
                     <Search size={13} style={{ marginLeft: 10, color: 'var(--fog)', flexShrink: 0 }} aria-hidden="true" />
-                    <input type="text" className="search-input" placeholder="Roll number…"
+                    <input type="text" className="search-input" placeholder="Roll number..."
                       value={adminSearch} onChange={e => setAdminSearch(e.target.value)} aria-label="Search by roll number" />
                     <button type="submit" className="search-btn" aria-label="Search"><ArrowRight size={13} /></button>
                   </div>
@@ -1334,67 +1323,100 @@ function App() {
 
           <div className="main-body">
 
-            {/* ── OVERVIEW ── */}
+            {/* -- OVERVIEW -- */}
             {activeTab === 'overview' && (
               <div className="anim-fade-up">
+                <div className="chart-zone-header" style={{ marginBottom: 12 }}>
+                  <div className="chart-title">
+                    <span className="chart-title-accent" aria-hidden="true" />
+                    Overview
+                    <span style={{ fontSize: 11, color: 'var(--fog)', fontFamily: 'var(--font-mono)', fontWeight: 400, marginLeft: 4 }}>
+                      &bull; {overviewYear === 'Overall' ? 'All Years' : overviewYear}
+                    </span>
+                  </div>
+                  <div className="tab-strip" role="group" aria-label="Overview year filter">
+                    {['Overall', 'Year 1', 'Year 2', 'Year 3', 'Year 4'].map(yr => (
+                      <button
+                        key={yr}
+                        type="button"
+                        className={`tab-btn ${overviewYear === yr ? 'active' : ''}`}
+                        onClick={() => setOverviewYear(yr)}
+                        aria-pressed={overviewYear === yr}
+                      >
+                        {yr}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {kpis && (
                   <div style={{ display: 'flex', gap: 1, marginBottom: 24, background: 'var(--cloud)', border: '1px solid var(--cloud)', borderRadius: 4, overflow: 'hidden', flexWrap: 'nowrap' }} role="region" aria-label="Key performance indicators">
-                    <div className="kpi-tile kpi-tile-lead" style={{ flex: '1 1 0', minWidth: 0 }}>
-                      <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--brass)', display: 'inline-block' }} aria-hidden="true" /> Total Students</div>
-                      <div className="kpi-lead-value">{animTotal.toLocaleString()}</div>
-                      <div className="kpi-trend kpi-trend-up"><TrendingUp size={11} aria-hidden="true" /> Active this period</div>
+                    {/* 1. Total Students */}
+                    <div className="kpi-tile kpi-tile-lead kpi-wash-blue" style={{ flex: '1 1 0', minWidth: 0 }}>
+                      <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--kpi-blue-icon)', display: 'inline-block' }} aria-hidden="true" /> Total Students</div>
+                      <div className="kpi-lead-value">{animOverviewTotal.toLocaleString()}</div>
                     </div>
-                    <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                      <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} aria-hidden="true" /> Avg. Points</div>
-                      <div className="kpi-value">{animAvg.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                      <div className="kpi-trend kpi-trend-flat" style={{ fontSize: 10, marginTop: 4 }}>pts per student</div>
+
+                    {/* 2. Active Students */}
+                    <div className="kpi-tile kpi-wash-green" style={{ flex: '1 1 0', minWidth: 0 }}>
+                      <div className="kpi-label"><Activity size={10} style={{ verticalAlign: 'middle', marginRight: 3, color: 'var(--kpi-green-icon)' }} aria-hidden="true" /> Active Students</div>
+                      <div className="kpi-value" style={{ color: 'var(--kpi-green-icon)' }}>{animOverviewActive.toLocaleString()}</div>
+                      <div className="kpi-trend" style={{ color: 'var(--kpi-green-icon)', fontSize: 10, marginTop: 4 }}>
+                        <TrendingUp size={11} aria-hidden="true" /> with reward points
+                      </div>
                     </div>
-                    <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                      <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--coral)', display: 'inline-block' }} aria-hidden="true" /> At Risk</div>
-                      <div className="kpi-value" style={{ color: 'var(--coral)' }}>{animAtRisk.toLocaleString()}</div>
-                      <div className="kpi-trend kpi-trend-down"><ArrowDown size={10} aria-hidden="true" /> Need attention</div>
+
+                    {/* 3. Inactive Students */}
+                    <div className="kpi-tile kpi-wash-coral" style={{ flex: '1 1 0', minWidth: 0 }}>
+                      <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--coral)', display: 'inline-block' }} aria-hidden="true" /> Inactive Students</div>
+                      <div className="kpi-value" style={{ color: 'var(--coral)' }}>{animOverviewInactive.toLocaleString()}</div>
+                      <div className="kpi-trend kpi-trend-down" style={{ fontSize: 10, marginTop: 4 }}>
+                        <ArrowDown size={10} aria-hidden="true" /> 0 points logged
+                      </div>
                     </div>
-                    <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                      <div className="kpi-label"><span style={{ width: 6, height: 6, background: 'var(--amber)', display: 'inline-block', clipPath: 'polygon(50% 0%,100% 100%,0% 100%)' }} aria-hidden="true" /> Lab Points</div>
-                      <div className="kpi-value">{animLab.toLocaleString(undefined, { maximumFractionDigits: 0 })}</div>
-                      <div className="kpi-trend kpi-trend-flat" style={{ fontSize: 10, marginTop: 4 }}>total issued</div>
-                    </div>
-                    <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                      <div className="kpi-label"><Activity size={10} style={{ verticalAlign: 'middle', marginRight: 3 }} aria-hidden="true" /> Active This Period</div>
-                      <div className="kpi-value" style={{ color: 'var(--teal)' }}>{animActive.toLocaleString()}</div>
-                      <div className="kpi-trend" style={{ color: 'var(--teal)', fontSize: 10, marginTop: 4 }}>↑ engaged students</div>
+
+                    {/* 4. Top Performing Department */}
+                    <div className="kpi-tile kpi-wash-purple" style={{ flex: '1.2 1 0', minWidth: 0 }}>
+                      <div className="kpi-label"><CheckCircle size={10} style={{ verticalAlign: 'middle', marginRight: 3, color: 'var(--kpi-purple-icon)' }} aria-hidden="true" /> Top Performing Department</div>
+                      <div style={{ fontFamily: 'var(--font-display)', fontSize: (currentOverviewStats.top_department && currentOverviewStats.top_department.length > 20) ? 15 : 18, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2, marginBottom: 4 }} title={currentOverviewStats.top_department}>
+                        {currentOverviewStats.top_department || '—'}
+                      </div>
+                      <div className="kpi-trend" style={{ color: 'var(--kpi-purple-icon)', fontFamily: 'var(--font-mono)', fontSize: 11, marginTop: 2 }}>
+                        {currentOverviewStats.top_dept_avg_pts ? `${fmt(currentOverviewStats.top_dept_avg_pts)} avg pts` : '—'}
+                      </div>
                     </div>
                   </div>
                 )}
 
                 {!presentationMode && (
                   <>
-                    <VisualInsightStrip kpis={kpis} deptStats={deptStats} catStats={catStats} />
-
                     {/* Dept balance + category */}
                     <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 1, border: '1px solid var(--cloud)', borderRadius: 4, overflow: 'hidden', marginBottom: 24, background: 'var(--cloud)' }}>
                       <div style={{ background: 'var(--paper)', padding: '16px 20px' }}>
                         <div className="chart-zone-header" style={{ marginBottom: 12 }}>
-                          <div className="chart-title"><span className="chart-title-accent" aria-hidden="true" />Dept. Average Balance Points</div>
-                          <div className="tab-strip" role="group" aria-label="Year filter">
-                            {['I', 'II', 'III', 'IV'].map(year => (
-                              <button key={year} className={`tab-btn ${deptYearFilter === year ? 'active' : ''}`}
-                                onClick={() => setDeptYearFilter(year)} aria-pressed={deptYearFilter === year}>Year {year}</button>
-                            ))}
+                          <div className="chart-title">
+                            <span className="chart-title-accent" aria-hidden="true" />
+                            Dept. Average Reward Points
+                            <span style={{ fontSize: 11, color: 'var(--fog)', fontFamily: 'var(--font-mono)', fontWeight: 400, marginLeft: 4 }}>
+                              &bull; {overviewYear === 'Overall' ? 'All Years' : overviewYear}
+                            </span>
                           </div>
                         </div>
                         <div style={{ width: '100%', height: 240 }}>
                           <ResponsiveContainer>
-                            <BarChart data={deptBalanceData} margin={{ top: 5, right: 10, left: 0, bottom: 80 }}>
+                            <BarChart data={deptChartData} margin={{ top: 5, right: 10, left: 0, bottom: 80 }}>
                               <CartesianGrid strokeDasharray="2 4" stroke="var(--cloud)" vertical={false} />
                               <XAxis dataKey="department" tickFormatter={v => abbreviateDept(v)}
                                 tick={{ fill: 'var(--fog)', fontSize: 9, fontFamily: 'var(--font-mono)' }} angle={-40} textAnchor="end" interval={0} />
                               <YAxis tick={{ fill: 'var(--fog)', fontSize: 10, fontFamily: 'var(--font-mono)' }} tickFormatter={v => v.toLocaleString()} />
                               <Tooltip content={<CustomTooltip />} />
-                              <Bar dataKey="avg_balance_points" name="Avg Balance" radius={[2, 2, 0, 0]} maxBarSize={36}>
-                                {deptBalanceData.map((d, i) => {
-                                  const minScore = Math.min(...deptBalanceData.map(x => x.avg_balance_points));
-                                  return <Cell key={i} fill={d.avg_balance_points === minScore ? 'var(--coral)' : 'var(--brass)'} />;
+                              <Bar dataKey="avg_points" name="Avg Reward Points" radius={[2, 2, 0, 0]} maxBarSize={36}>
+                                {deptChartData.map((d, i) => {
+                                  const maxScore = Math.max(...deptChartData.map(x => x.avg_points || 0));
+                                  const minScore = Math.min(...deptChartData.map(x => x.avg_points || 0));
+                                  const isTop = d.department === currentOverviewStats.top_department || d.avg_points === maxScore;
+                                  const isLowest = d.avg_points === minScore;
+                                  return <Cell key={i} fill={isTop ? 'var(--teal)' : (isLowest ? 'var(--coral)' : 'var(--brand-primary)')} />;
                                 })}
                               </Bar>
                             </BarChart>
@@ -1410,7 +1432,7 @@ function App() {
                           return (
                             <div key={i} className="cat-bar-row">
                               <div className="cat-bar-label" title={cat.category}>{cat.category?.split(' ').slice(0, 2).join(' ')}</div>
-                              <div className="cat-bar-track"><div className="cat-bar-fill" style={{ width: `${(cat.total_points / max) * 100}%`, background: CHART_COLORS[i % CHART_COLORS.length] }} /></div>
+                              <div className="cat-bar-track"><div className="cat-bar-fill" style={{ width: `${(cat.total_points / max) * 100}%`, background: getCategoryColor(cat.category, i) }} /></div>
                               <div className="cat-bar-pts">{Math.round(cat.total_points / 1000)}k</div>
                             </div>
                           );
@@ -1418,18 +1440,18 @@ function App() {
                       </div>
                     </div>
 
-                    {/* ── Reward Points Distribution Histogram + Points by Category Pie ── */}
+                    {/* -- Reward Points Distribution Histogram + Points by Category Pie -- */}
                     {(() => {
                       // Build histogram buckets from leaderboard data (approximate using dept stats)
                       const BUCKETS = [
-                        { label: '0–1k',    min: 0,     max: 1000 },
-                        { label: '1k–5k',   min: 1000,  max: 5000 },
-                        { label: '5k–10k',  min: 5000,  max: 10000 },
+                        { label: '0–1k', min: 0, max: 1000 },
+                        { label: '1k–5k', min: 1000, max: 5000 },
+                        { label: '5k–10k', min: 5000, max: 10000 },
                         { label: '10k–15k', min: 10000, max: 15000 },
                         { label: '15k–20k', min: 15000, max: 20000 },
                         { label: '20k–25k', min: 20000, max: 25000 },
                         { label: '25k–30k', min: 25000, max: 30000 },
-                        { label: '30k+',    min: 30000, max: Infinity },
+                        { label: '30k+', min: 30000, max: Infinity },
                       ];
                       // Use leaderboard data + kpis to approximate distribution
                       // We'll use a deterministic seed based on kpi totals to generate plausible histogram
@@ -1453,7 +1475,7 @@ function App() {
                       }));
                       const totalCatPts = pieSlices.reduce((s, x) => s + x.value, 0);
 
-                      const PIE_COLORS = ['#C49A3C','#3A7A7A','#D4922A','#7A6A4A','#5A8A8A','#A07A30','#2A6060','#B46830'];
+                      
 
                       return (
                         <div style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 1, border: '1px solid var(--cloud)', borderRadius: 4, overflow: 'hidden', marginBottom: 24, background: 'var(--cloud)' }}>
@@ -1461,7 +1483,7 @@ function App() {
                           <div style={{ background: 'var(--paper)', padding: '16px 20px' }}>
                             <div className="chart-zone-header" style={{ marginBottom: 12 }}>
                               <div className="chart-title"><span className="chart-title-accent" aria-hidden="true" />Student Reward Points Distribution</div>
-                              <div style={{ fontSize: 10, color: 'var(--fog)' }}>{(kpis?.total_students || 0).toLocaleString()} students · all departments</div>
+                              <div style={{ fontSize: 10, color: 'var(--fog)' }}>{(kpis?.total_students || 0).toLocaleString()} students &bull; all departments</div>
                             </div>
                             <div style={{ width: '100%', height: 260 }}>
                               <ResponsiveContainer>
@@ -1474,7 +1496,7 @@ function App() {
                                     content={({ active, payload, label }) => active && payload?.length ? (
                                       <div style={{ background: 'var(--paper)', border: '1px solid var(--cloud)', borderRadius: 4, padding: '8px 12px', fontSize: 11, boxShadow: 'var(--shadow-pop)' }}>
                                         <div style={{ fontWeight: 700, color: 'var(--fog)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{label}</div>
-                                        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brass)' }}>{payload[0].value.toLocaleString()} students</div>
+                                        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-primary)' }}>{payload[0].value.toLocaleString()} students</div>
                                       </div>
                                     ) : null}
                                   />
@@ -1504,13 +1526,13 @@ function App() {
                                     dataKey="value" nameKey="name"
                                     stroke="none"
                                   >
-                                    {pieSlices.map((_, i) => <Cell key={i} fill={PIE_COLORS[i % PIE_COLORS.length]} />)}
+                                    {pieSlices.map((s, i) => <Cell key={i} fill={getCategoryColor(s.fullName, i)} />)}
                                   </Pie>
                                   <Tooltip
                                     content={({ active, payload }) => active && payload?.length ? (
                                       <div style={{ background: 'var(--paper)', border: '1px solid var(--cloud)', borderRadius: 4, padding: '8px 12px', fontSize: 11, boxShadow: 'var(--shadow-pop)' }}>
                                         <div style={{ fontWeight: 700, color: 'var(--fog)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 4 }}>{payload[0].payload.fullName}</div>
-                                        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brass)' }}>{fmtInt(payload[0].value)} pts</div>
+                                        <div style={{ fontFamily: 'var(--font-mono)', fontWeight: 700, color: 'var(--brand-primary)' }}>{fmtInt(payload[0].value)} pts</div>
                                         <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fog)' }}>{totalCatPts > 0 ? Math.round((payload[0].value / totalCatPts) * 100) : 0}% of total</div>
                                       </div>
                                     ) : null}
@@ -1519,7 +1541,7 @@ function App() {
                               </ResponsiveContainer>
                               <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
                                 <div style={{ textAlign: 'center' }}>
-                                  <div style={{ fontSize: 9, color: 'var(--fog)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1.4 }}>Total<br/>Points<br/>Earned</div>
+                                  <div style={{ fontSize: 9, color: 'var(--fog)', fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1.4 }}>Total<br />Points<br />Earned</div>
                                 </div>
                               </div>
                             </div>
@@ -1527,7 +1549,7 @@ function App() {
                               {pieSlices.map((s, i) => (
                                 <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: PIE_COLORS[i % PIE_COLORS.length], flexShrink: 0 }} />
+                                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: getCategoryColor(s.fullName, i), flexShrink: 0 }} />
                                     <span style={{ color: 'var(--ink)', fontWeight: 500 }} title={s.fullName}>{s.name}</span>
                                   </div>
                                   <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--fog)', flexShrink: 0 }}>
@@ -1546,7 +1568,7 @@ function App() {
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
                         <div className="chart-title"><span className="chart-title-accent" aria-hidden="true" />Departments</div>
                         <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-                          <input type="text" className="ui-select" style={{ width: 140 }} placeholder="Search dept…" value={mosaicSearch} onChange={e => setMosaicSearch(e.target.value)} />
+                          <input type="text" className="ui-select" style={{ width: 140 }} placeholder="Search dept..." value={mosaicSearch} onChange={e => setMosaicSearch(e.target.value)} />
                           <select className="ui-select" value={mosaicSort} onChange={e => setMosaicSort(e.target.value)}>
                             <option value="students">Sort: Students</option>
                             <option value="points">Sort: Points</option>
@@ -1567,8 +1589,8 @@ function App() {
                                 const borderColor = instAvg > 0
                                   ? dept.avg_points > instAvg * 1.05 ? 'var(--teal)'
                                     : dept.avg_points < instAvg * 0.95 ? 'var(--coral)'
-                                      : 'var(--brass)'
-                                  : CHART_COLORS[di % CHART_COLORS.length];
+                                      : 'var(--brand-primary)'
+                                  : 'var(--brand-primary)';
                                 return (
                                   <div key={dept.department || di} className="dept-tile"
                                     style={{ background: 'var(--paper)', border: '1px solid var(--cloud)', borderRadius: 4, padding: '16px', cursor: 'pointer', position: 'relative', overflow: 'hidden' }}
@@ -1627,7 +1649,7 @@ function App() {
                       {/* Border colour legend */}
                       <div style={{ display: 'flex', gap: 16, marginTop: 10, alignItems: 'center' }}>
                         <span style={{ fontSize: 10, fontWeight: 700, letterSpacing: '0.06em', textTransform: 'uppercase', color: 'var(--fog)' }}>Border:</span>
-                        {[['var(--teal)', 'Above avg'], ['var(--brass)', 'Near avg'], ['var(--coral)', 'Below avg']].map(([c, l]) => (
+                        {[['var(--teal)', 'Above avg'], ['var(--brand-primary)', 'Near avg'], ['var(--coral)', 'Below avg']].map(([c, l]) => (
                           <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 10, color: 'var(--fog)' }}>
                             <div style={{ width: 3, height: 16, background: c, borderRadius: 1 }} aria-hidden="true" />{l}
                           </div>
@@ -1638,7 +1660,7 @@ function App() {
                     {/* Student Rankings */}
                     <div className="card" style={{ maxWidth: '100%', overflow: 'hidden' }}>
                       <div className="card-header">
-                        <div className="card-title"><GraduationCap size={14} color="var(--brass)" aria-hidden="true" />Student Rankings</div>
+                        <div className="card-title"><GraduationCap size={14} color="var(--brand-primary)" aria-hidden="true" />Student Rankings</div>
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
                           <select className="ui-select" value={filterDept} onChange={e => setFilterDept(e.target.value)} aria-label="Filter department">
                             <option value="">All Departments</option>
@@ -1695,37 +1717,39 @@ function App() {
               </div>
             )}
 
-            {/* ── MENTOR PODS ── */}
+            {/* -- MENTOR PODS -- */}
             {activeTab === 'pods' && (
               <div className="anim-fade-up">
                 <div style={{ display: 'flex', gap: 1, marginBottom: 24, background: 'var(--cloud)', border: '1px solid var(--cloud)', borderRadius: 4, overflow: 'hidden', flexWrap: 'nowrap' }} role="region" aria-label="Pod summary">
-                  <div className="kpi-tile kpi-tile-lead" style={{ flex: '1 1 0', minWidth: 0 }}>
-                    <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--teal)', display: 'inline-block' }} aria-hidden="true" />Active Pods</div>
+                  <div className="kpi-tile kpi-tile-lead kpi-wash-blue" style={{ flex: '1 1 0', minWidth: 0 }}>
+                    <div className="kpi-label"><span style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--kpi-blue-icon)', display: 'inline-block' }} aria-hidden="true" />Active Pods</div>
                     <div className="kpi-lead-value">{isMentor ? 1 : mentorPods.length}</div>
-                    <div className="kpi-trend" style={{ color: 'var(--teal)', fontSize: 10, marginTop: 4 }}>1 mentor per 20 students</div>
+                    <div className="kpi-trend" style={{ color: 'var(--kpi-blue-icon)', fontSize: 10, marginTop: 4 }}>1 mentor per 20 students</div>
                   </div>
-                  <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                    <div className="kpi-label" style={{ color: 'var(--teal)' }}>On Track</div>
-                    <div className="kpi-value" style={{ color: 'var(--teal)' }}>
+                  <div className="kpi-tile kpi-wash-green" style={{ flex: '1 1 0', minWidth: 0 }}>
+                    <div className="kpi-label" style={{ color: 'var(--kpi-green-icon)' }}>On Track</div>
+                    <div className="kpi-value" style={{ color: 'var(--kpi-green-icon)' }}>
                       {(isMentor ? [myPod] : mentorPods).filter(Boolean).reduce((a, p) => a + p.students.filter(s => s.engagement_group === 'High').length, 0)}
                     </div>
                   </div>
-                  <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                    <div className="kpi-label" style={{ color: 'var(--amber)' }}>Needs Attention</div>
-                    <div className="kpi-value" style={{ color: 'var(--amber)' }}>
+                  <div className="kpi-tile kpi-wash-gold" style={{ flex: '1 1 0', minWidth: 0 }}>
+                    <div className="kpi-label" style={{ color: 'var(--kpi-gold-icon)' }}>Needs Attention</div>
+                    <div className="kpi-value" style={{ color: 'var(--kpi-gold-icon)' }}>
                       {(isMentor ? [myPod] : mentorPods).filter(Boolean).reduce((a, p) => a + p.students.filter(s => s.engagement_group === 'Medium').length, 0)}
                     </div>
                   </div>
-                  <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
+                  <div className="kpi-tile kpi-wash-coral" style={{ flex: '1 1 0', minWidth: 0 }}>
                     <div className="kpi-label" style={{ color: 'var(--coral)' }}>At Risk</div>
                     <div className="kpi-value" style={{ color: 'var(--coral)' }}>
                       {(isMentor ? [myPod] : mentorPods).filter(Boolean).reduce((a, p) => a + p.students.filter(s => s.engagement_group === 'Low').length, 0)}
                     </div>
                   </div>
-                  <div className="kpi-tile" style={{ flex: '1 1 0', minWidth: 0 }}>
-                    <div className="kpi-label"><Activity size={10} style={{ verticalAlign: 'middle', marginRight: 3 }} aria-hidden="true" />Active This Period</div>
-                    <div className="kpi-value" style={{ color: 'var(--teal)' }}>{animActive.toLocaleString()}</div>
-                    <div className="kpi-trend" style={{ color: 'var(--teal)', fontSize: 10, marginTop: 4 }}>↑ engaged students</div>
+                  <div className="kpi-tile kpi-wash-purple" style={{ flex: '1 1 0', minWidth: 0 }}>
+                    <div className="kpi-label"><Activity size={10} style={{ verticalAlign: 'middle', marginRight: 3, color: 'var(--kpi-purple-icon)' }} aria-hidden="true" />Active This Period</div>
+                    <div className="kpi-value" style={{ color: 'var(--kpi-purple-icon)' }}>
+                      {(isMentor ? [myPod] : mentorPods).filter(Boolean).reduce((a, p) => a + p.students.filter(s => (s.total_points || 0) > 0).length, 0).toLocaleString()}
+                    </div>
+                    <div className="kpi-trend" style={{ color: 'var(--kpi-purple-icon)', fontSize: 10, marginTop: 4 }}>~ engaged students</div>
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 16, marginBottom: 16, alignItems: 'center' }}>
@@ -1748,7 +1772,7 @@ function App() {
                           <div>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                               <div className="pod-mentor-name">{pod.mentor.short}</div>
-                              <button style={{ background: 'none', border: 'none', color: 'var(--brass)', cursor: 'pointer', padding: 2 }}
+                              <button style={{ background: 'none', border: 'none', color: 'var(--brand-primary)', cursor: 'pointer', padding: 2 }}
                                 onClick={() => {
                                   setComposeTo(pod.mentor.id + "@rewardplatform.edu");
                                   setComposeSubject(`Milestone Update: Dept ${pod.dept}`);
@@ -1799,7 +1823,7 @@ function App() {
               </div>
             )}
 
-            {/* ── AI ASSISTANT ── */}
+            {/* -- AI ASSISTANT -- */}
             {activeTab === 'assistant' && (
               <div className="anim-fade-up">
                 <div className="card" style={{ marginBottom: 16 }}>
@@ -1807,7 +1831,7 @@ function App() {
                     <div style={{ fontFamily: 'var(--font-display)', fontSize: 18, fontWeight: 700, marginBottom: 4 }}>Ask about the data</div>
                     <div style={{ fontSize: 12, color: 'var(--fog)', marginBottom: 12 }}>Try: "Show Year II CSE students with balance points &gt; 500"</div>
                     <div className="ai-search-wrap">
-                        <input type="text" className="ai-search-input" placeholder="Query student data in plain language…"
+                      <input type="text" className="ai-search-input" placeholder="Query student data in plain language..."
                         value={aiQuery} onChange={e => setAiQuery(e.target.value)}
                         onKeyDown={e => { if (e.key === 'Enter') handleAiSearch(aiQuery); }} aria-label="AI query" />
                       <button className="ai-search-btn" onClick={() => handleAiSearch(aiQuery)}
@@ -1817,7 +1841,7 @@ function App() {
                     </div>
                   </div>
                 </div>
-                {aiLoading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--fog)' }}><div className="spinner" style={{ margin: '0 auto 12px' }} /><div style={{ fontSize: 12 }}>Processing…</div></div>}
+                {aiLoading && <div style={{ textAlign: 'center', padding: '40px 0', color: 'var(--fog)' }}><div className="spinner" style={{ margin: '0 auto 12px' }} /><div style={{ fontSize: 12 }}>Processing...</div></div>}
                 {aiResult && !aiLoading && (
                   <div className="anim-fade-up" style={{ maxWidth: '100%' }}>
                     <div className="ai-result-card" style={{ maxWidth: '100%', overflowX: 'auto' }}>
@@ -1827,7 +1851,7 @@ function App() {
                         <button className="btn-secondary" style={{ marginLeft: 'auto', fontSize: 11, padding: '3px 10px' }} onClick={() => { setAiResult(null); setAiQuery(''); setAiResultVisibleCount(200); }}>New query</button>
                       </div>
                       <div style={{ fontSize: 13.5, lineHeight: 1.65, color: 'var(--ink)', fontWeight: 500 }}>
-                        {aiResult.answer ? aiResult.answer.split('**').map((part, idx) => idx % 2 === 1 ? <strong key={idx} style={{ color: 'var(--brass)', fontWeight: 700 }}>{part}</strong> : part) : 'No answer generated.'}
+                        {aiResult.answer ? aiResult.answer.split('**').map((part, idx) => idx % 2 === 1 ? <strong key={idx} style={{ color: 'var(--brand-primary)', fontWeight: 700 }}>{part}</strong> : part) : 'No answer generated.'}
                       </div>
                       {aiResult.answer_type === 'chart' && aiResult.chart_data && (
                         <div style={{ height: 250, marginTop: 16 }}>
@@ -1838,12 +1862,12 @@ function App() {
                                 <XAxis dataKey={aiResult.chart_data.nameKey} tick={{ fontSize: 10, fill: 'var(--fog)' }} interval={0} angle={-45} textAnchor="end" height={60} />
                                 <YAxis tick={{ fontSize: 10, fill: 'var(--fog)' }} />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Bar dataKey={aiResult.chart_data.dataKey} fill="var(--brass)" radius={[4, 4, 0, 0]} />
+                                <Bar dataKey={aiResult.chart_data.dataKey} fill="var(--brand-primary)" radius={[4, 4, 0, 0]} />
                               </BarChart>
                             ) : (
                               <PieChart>
                                 <Pie data={aiResult.chart_data.data} dataKey={aiResult.chart_data.dataKey} nameKey={aiResult.chart_data.nameKey} cx="50%" cy="50%" outerRadius={80} label={{ fontSize: 10, fill: 'var(--fog)' }}>
-                                  {aiResult.chart_data.data.map((_, i) => <Cell key={i} fill={['var(--brass)', 'var(--teal)', 'var(--coral)', 'var(--ink)', '#e8d090', '#a3c2c2'][i % 6]} />)}
+                                  {aiResult.chart_data.data.map((_, i) => <Cell key={i} fill={CATEGORY_COLORS[i % CATEGORY_COLORS.length]} />)}
                                 </Pie>
                                 <Tooltip content={<CustomTooltip />} />
                               </PieChart>
@@ -1852,50 +1876,50 @@ function App() {
                         </div>
                       )}
                     </div>
-                                {aiResult.results?.length > 0 && (
+                    {aiResult.results?.length > 0 && (
                       <div className="card" style={{ marginTop: 16, maxWidth: '100%', overflow: 'hidden' }}>
                         <div className="card-header">
                           <div className="card-title">Matching Students ({aiResult.results.length})</div>
                           <button className="btn-secondary" onClick={() => exportCSV(aiResult.results)}><Download size={12} /> Export CSV</button>
                         </div>
                         <div style={{ overflowX: 'auto', width: '100%' }}>
-                                      <table className="data-table">
-                                        <thead>
-                                          <tr>
-                                            {['Roll No', 'Name', 'Mentor Name', 'Department', 'Year', 'Reward Points', 'Engagement'].map(lbl => (
-                                              <th key={lbl} style={{ position: 'sticky', top: 0, background: 'var(--paper)', textAlign: lbl === 'Roll No' || lbl === 'Name' ? 'left' : 'right' }}>{lbl}</th>
-                                            ))}
-                                            <th style={{ position: 'sticky', top: 0, background: 'var(--paper)', width: 36 }} />
-                                          </tr>
-                                        </thead>
-                                        <tbody>
-                                          {aiResult.results.slice(0, aiResultVisibleCount).map((row, index) => {
-                                            let rawMentor = (row.mentor_id || row.mentor_name || '').toLowerCase();
-                                            if (!rawMentor && row.roll_no) {
-                                              const sum = String(row.roll_no).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
-                                              rawMentor = MENTOR_ROSTER[sum % MENTOR_ROSTER.length].id;
-                                            }
-                                            const mentorObj = MENTOR_ROSTER.find(m => m.id.toLowerCase() === rawMentor);
-                                            const mentorDisplay = mentorObj ? mentorObj.name : (rawMentor || '—');
-                                            return (
-                                              <tr key={row.roll_no || index}>
-                                                <td className="td-mono td-meta" style={{ textAlign: 'left' }}>{row.roll_no || '—'}</td>
-                                                <td className="td-name" style={{ textAlign: 'left' }}>{row.student_name || '—'}</td>
-                                                <td className="td-mono" style={{ textAlign: 'right' }}>{mentorDisplay}</td>
-                                                <td className="td-mono" style={{ textAlign: 'right' }}>{row.department ? abbreviateDept(row.department) : '—'}</td>
-                                                <td className="td-mono" style={{ textAlign: 'right' }}>{row.year || '—'}</td>
-                                                <td className="td-mono" style={{ textAlign: 'right', fontWeight: 700 }}>{fmt(row.total_points)}</td>
-                                                <td className="td-mono" style={{ textAlign: 'right' }}>
-                                                  {row.engagement_group ? <StatusBadge level={row.engagement_group === 'High' ? 'high' : row.engagement_group === 'Medium' ? 'medium' : 'low'} label={row.engagement_group} /> : '—'}
-                                                </td>
-                                                <td style={{ textAlign: 'center' }}>
-                                                  {row.roll_no && <button className="inspect-btn" onClick={() => openStudentDrawer(row.roll_no)} aria-label={`Inspect ${row.student_name || row.roll_no}`}><ScanSearch size={12} /></button>}
-                                                </td>
-                                              </tr>
-                                            );
-                                          })}
-                                        </tbody>
-                                      </table>
+                          <table className="data-table">
+                            <thead>
+                              <tr>
+                                {['Roll No', 'Name', 'Mentor Name', 'Department', 'Year', 'Reward Points', 'Engagement'].map(lbl => (
+                                  <th key={lbl} style={{ position: 'sticky', top: 0, background: 'var(--paper)', textAlign: lbl === 'Roll No' || lbl === 'Name' ? 'left' : 'right' }}>{lbl}</th>
+                                ))}
+                                <th style={{ position: 'sticky', top: 0, background: 'var(--paper)', width: 36 }} />
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {aiResult.results.slice(0, aiResultVisibleCount).map((row, index) => {
+                                let rawMentor = (row.mentor_id || row.mentor_name || '').toLowerCase();
+                                if (!rawMentor && row.roll_no) {
+                                  const sum = String(row.roll_no).split('').reduce((a, c) => a + c.charCodeAt(0), 0);
+                                  rawMentor = MENTOR_ROSTER[sum % MENTOR_ROSTER.length].id;
+                                }
+                                const mentorObj = MENTOR_ROSTER.find(m => m.id.toLowerCase() === rawMentor);
+                                const mentorDisplay = mentorObj ? mentorObj.name : (rawMentor || '—');
+                                return (
+                                  <tr key={row.roll_no || index}>
+                                    <td className="td-mono td-meta" style={{ textAlign: 'left' }}>{row.roll_no || '—'}</td>
+                                    <td className="td-name" style={{ textAlign: 'left' }}>{row.student_name || '—'}</td>
+                                    <td className="td-mono" style={{ textAlign: 'right' }}>{mentorDisplay}</td>
+                                    <td className="td-mono" style={{ textAlign: 'right' }}>{row.department ? abbreviateDept(row.department) : '—'}</td>
+                                    <td className="td-mono" style={{ textAlign: 'right' }}>{row.year || '—'}</td>
+                                    <td className="td-mono" style={{ textAlign: 'right', fontWeight: 700 }}>{fmt(row.total_points)}</td>
+                                    <td className="td-mono" style={{ textAlign: 'right' }}>
+                                      {row.engagement_group ? <StatusBadge level={row.engagement_group === 'High' ? 'high' : row.engagement_group === 'Medium' ? 'medium' : 'low'} label={row.engagement_group} /> : '—'}
+                                    </td>
+                                    <td style={{ textAlign: 'center' }}>
+                                      {row.roll_no && <button className="inspect-btn" onClick={() => openStudentDrawer(row.roll_no)} aria-label={`Inspect ${row.student_name || row.roll_no}`}><ScanSearch size={12} /></button>}
+                                    </td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
                         </div>
                         {aiResult.results.length > aiResultVisibleCount && (
                           <div style={{ padding: '12px 20px', borderTop: '1px solid var(--cloud)', textAlign: 'center', background: 'var(--cloud)' }}>
@@ -1911,7 +1935,7 @@ function App() {
               </div>
             )}
 
-            {/* ── POLICY ALERTS ── */}
+            {/* -- POLICY ALERTS -- */}
             {activeTab === 'alerts' && (
               <div className="anim-fade-up">
                 {alerts.length > 0 && (() => {
@@ -2019,7 +2043,7 @@ function App() {
                                             style={{ cursor: 'pointer' }} />
                                           <div>
                                             <div style={{ fontFamily: 'var(--font-display)', fontWeight: 700, fontSize: 13, color: 'var(--ink)' }}>{alert.student_name || alert.title.split(":").pop().trim()}</div>
-                                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fog)' }}>{alert.roll_no} · {abbreviateDept(alert.department)}</div>
+                                            <div style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fog)' }}>{alert.roll_no} &bull; {abbreviateDept(alert.department)}</div>
                                           </div>
                                         </div>
                                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 9, background: 'var(--coral)', color: 'white', padding: '2px 6px', borderRadius: 2, fontWeight: 700 }}>HIGH RISK</span>
@@ -2052,7 +2076,7 @@ function App() {
                                       </div>
 
                                       {/* Hover actions overlay */}
-                                      <div className="critical-hover-actions" style={{ position: 'absolute', inset: 0, background: 'rgba(244,240,232,0.92)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, opacity: 0, transition: 'opacity 0.15s ease' }}>
+                                      <div className="critical-hover-actions" style={{ position: 'absolute', inset: 0, background: 'var(--paper)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16, opacity: 0, transition: 'opacity 0.15s ease' }}>
                                         <button className="btn-primary-ink" style={{ padding: '8px 16px', fontSize: 11, display: 'flex', alignItems: 'center', gap: 6 }} onClick={() => handleNotifyMentor(alert)}>
                                           <Mail size={12} /> Notify Mentor
                                         </button>
@@ -2115,7 +2139,7 @@ function App() {
               </div>
             )}
 
-            {/* ── ADMIN SETTINGS ── */}
+            {/* -- ADMIN SETTINGS -- */}
             {activeTab === 'settings' && (
               <div className="anim-fade-up">
                 <div className="tab-strip" style={{ marginBottom: 20 }} role="tablist">
@@ -2217,7 +2241,7 @@ function App() {
                       {importProgress && <div style={{ textAlign: 'center', padding: 20 }}><div className="spinner" style={{ margin: '0 auto 12px' }} />Parsing file...</div>}
 
                       {importResult && (
-                        <div style={{ background: 'rgba(58,122,122,0.1)', border: '1px solid var(--teal)', borderRadius: 4, padding: 14, marginBottom: 16 }}>
+                        <div style={{ background: 'var(--teal-light)', border: '1px solid var(--teal)', borderRadius: 4, padding: 14, marginBottom: 16 }}>
                           <div style={{ fontWeight: 700, color: 'var(--teal)', fontSize: 13, marginBottom: 4 }}>Import Completed Successfully</div>
                           <div style={{ fontSize: 12, color: 'var(--ink)' }}>{importResult.imported_count} rows imported. {importResult.skipped_count} rows skipped.</div>
                           {importResult.reasons?.length > 0 && (
@@ -2267,14 +2291,14 @@ function App() {
                             <div style={{ marginBottom: 20 }}>
                               <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', color: 'var(--fog)', marginBottom: 8 }}>Validation results</div>
                               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16 }}>
-                                <div style={{ background: 'rgba(212,95,80,0.06)', border: '1px solid var(--coral)', borderRadius: 4, padding: 12 }}>
+                                <div style={{ background: 'var(--coral-light)', border: '1px solid var(--coral)', borderRadius: 4, padding: 12 }}>
                                   <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--coral)', textTransform: 'uppercase', marginBottom: 6 }}>Errors ({importErrors.length})</div>
                                   <ul style={{ fontSize: 10, color: 'var(--ink)', paddingLeft: 16, margin: 0, maxHeight: 120, overflowY: 'auto' }}>
                                     {importErrors.map((err, i) => <li key={i}>{err}</li>)}
                                     {importErrors.length === 0 && <li>No critical validation errors.</li>}
                                   </ul>
                                 </div>
-                                <div style={{ background: 'rgba(196,154,60,0.06)', border: '1px solid var(--brass)', borderRadius: 4, padding: 12 }}>
+                                <div style={{ background: 'var(--brass-light)', border: '1px solid var(--brass)', borderRadius: 4, padding: 12 }}>
                                   <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--brass)', textTransform: 'uppercase', marginBottom: 6 }}>Warnings ({importWarnings.length})</div>
                                   <ul style={{ fontSize: 10, color: 'var(--ink)', paddingLeft: 16, margin: 0, maxHeight: 120, overflowY: 'auto' }}>
                                     {importWarnings.map((warn, i) => <li key={i}>{warn}</li>)}
@@ -2325,7 +2349,7 @@ function App() {
             )}
           </div>
 
-          {/* ── EMAIL COMPOSE MODAL ── */}
+          {/* -- EMAIL COMPOSE MODAL -- */}
           {composeOpen && (
             <>
               <div className="drawer-overlay" onClick={() => setComposeOpen(false)} style={{ zIndex: 1500 }} />
@@ -2361,7 +2385,7 @@ function App() {
             </>
           )}
 
-          {/* ── INSPECT DRAWER ── */}
+          {/* -- INSPECT DRAWER -- */}
           {isDrawerOpen && (
             <>
               <div className="drawer-overlay" onClick={() => setIsDrawerOpen(false)} aria-hidden="true" />
@@ -2372,7 +2396,7 @@ function App() {
                       <div>
                         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--fog)', marginBottom: 4 }}>Department</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>{selDeptDrawer.department}</h2>
-                        <div style={{ fontSize: 11, color: 'var(--fog)', marginTop: 2 }}>{selDeptDrawer.student_count} Students · {fmt(selDeptDrawer.avg_points)} Avg Pts</div>
+                        <div style={{ fontSize: 11, color: 'var(--fog)', marginTop: 2 }}>{selDeptDrawer.student_count} Students &bull; {fmt(selDeptDrawer.avg_points)} Avg Pts</div>
                       </div>
                       <button className="icon-btn" onClick={() => setIsDrawerOpen(false)} aria-label="Close"><X size={14} /></button>
                     </div>
@@ -2393,7 +2417,7 @@ function App() {
                                   <span style={{ color: 'var(--fog)', fontFamily: 'var(--font-mono)', fontSize: 10, width: 16, textAlign: 'right' }}>#{si + 1}</span>
                                   <span style={{ fontWeight: 600, color: 'var(--ink)' }}>{s.student_name}</span>
                                 </div>
-                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--brass)', fontWeight: 700, flexShrink: 0 }}>{fmt(s.total_points)} pts</span>
+                                <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--brand-primary)', fontWeight: 700, flexShrink: 0 }}>{fmt(s.total_points)} pts</span>
                               </div>
                             ))}
                           </div>
@@ -2407,14 +2431,14 @@ function App() {
                       <div>
                         <div style={{ fontSize: 9, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--fog)', marginBottom: 4 }}>Student Profile</div>
                         <h2 style={{ fontFamily: 'var(--font-display)', fontSize: 20, fontWeight: 700, color: 'var(--ink)', margin: 0 }}>{selStudent.student_name}</h2>
-                        <div style={{ fontSize: 11, color: 'var(--fog)', marginTop: 2 }}>{selStudent.roll_no} · {selStudent.department} · Year {selStudent.year}</div>
+                        <div style={{ fontSize: 11, color: 'var(--fog)', marginTop: 2 }}>{selStudent.roll_no} &bull; {selStudent.department} &bull; Year {selStudent.year}</div>
                       </div>
                       <button className="icon-btn" onClick={() => setIsDrawerOpen(false)} aria-label="Close"><X size={14} /></button>
                     </div>
                     <div style={{ padding: '16px 20px' }}>
                       <div className="drawer-kpi-grid" role="region" aria-label="Student key figures">
                         {[
-                          { label: 'Total Points', value: fmt(selStudent.total_points), color: 'var(--brass)' },
+                          { label: 'Total Points', value: fmt(selStudent.total_points), color: 'var(--brand-primary)' },
                           { label: 'Overall Rank', value: `#${selStudent.rank}`, color: 'var(--ink)' },
                           { label: 'Dept. Rank', value: `#${selStudent.dept_rank}`, color: 'var(--teal)' },
                           { label: 'Balance', value: fmt(selStudent.balance_points), color: 'var(--teal)' },
@@ -2457,7 +2481,7 @@ function App() {
                                   <XAxis dataKey="year" tick={{ fill: 'var(--fog)', fontSize: 10, fontFamily: 'var(--font-mono)' }} />
                                   <YAxis tick={{ fill: 'var(--fog)', fontSize: 9, fontFamily: 'var(--font-mono)' }} tickFormatter={v => v.toLocaleString()} />
                                   <Tooltip content={<CustomTooltip />} />
-                                  <Bar dataKey="points" name="Points" radius={[2, 2, 0, 0]} fill="var(--brass)" maxBarSize={40} />
+                                  <Bar dataKey="points" name="Points" radius={[2, 2, 0, 0]} fill="var(--brand-primary)" maxBarSize={40} />
                                 </BarChart>
                               </ResponsiveContainer>
                             </div>
@@ -2465,17 +2489,17 @@ function App() {
                           <div style={{ marginBottom: 16 }}>
                             <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--fog)', marginBottom: 8 }}>
                               Monthly trend
-                              {selStudentExt.most_active_month && <span style={{ marginLeft: 8, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--brass)', background: 'var(--brass-light)', padding: '1px 5px', borderRadius: 2 }}>Peak: {selStudentExt.most_active_month}</span>}
+                              {selStudentExt.most_active_month && <span style={{ marginLeft: 8, fontFamily: 'var(--font-mono)', fontSize: 9, color: 'var(--brand-primary)', background: 'var(--kpi-blue-bg)', padding: '1px 5px', borderRadius: 2 }}>Peak: {selStudentExt.most_active_month}</span>}
                             </div>
                             <div style={{ width: '100%', height: 130 }}>
                               <ResponsiveContainer>
                                 <AreaChart data={selStudentExt.monthly_data} margin={{ top: 4, right: 5, left: -20, bottom: 4 }}>
-                                  <defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#C49A3C" stopOpacity={0.25} /><stop offset="95%" stopColor="#C49A3C" stopOpacity={0} /></linearGradient></defs>
+                                  <defs><linearGradient id="dg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#2F5FD6" stopOpacity={0.25} /><stop offset="95%" stopColor="#2F5FD6" stopOpacity={0} /></linearGradient></defs>
                                   <CartesianGrid strokeDasharray="2 4" stroke="var(--cloud)" vertical={false} />
                                   <XAxis dataKey="month" tickFormatter={v => v.slice(0, 3)} tick={{ fill: 'var(--fog)', fontSize: 9, fontFamily: 'var(--font-mono)' }} />
                                   <YAxis tick={{ fill: 'var(--fog)', fontSize: 9, fontFamily: 'var(--font-mono)' }} tickFormatter={v => v.toLocaleString()} />
                                   <Tooltip content={<CustomTooltip />} />
-                                  <Area type="monotone" dataKey="points" stroke="var(--brass)" strokeWidth={1.5} fill="url(#dg)" name="Points" activeDot={{ r: 3, fill: 'var(--brass)' }} />
+                                  <Area type="monotone" dataKey="points" stroke="var(--brand-primary)" strokeWidth={1.5} fill="url(#dg)" name="Points" activeDot={{ r: 3, fill: 'var(--brand-primary)' }} />
                                 </AreaChart>
                               </ResponsiveContainer>
                             </div>
@@ -2517,9 +2541,9 @@ function App() {
     );
   }
 
-  // ══════════════════════════════════════════════════
+  // ──────────────────────────────────────────────────
   //  STUDENT VIEW
-  // ══════════════════════════════════════════════════
+  // ──────────────────────────────────────────────────
   const pieData = personalData ? (personalData.breakdown || []).filter(x => x.points > 0) : [];
   const totalPiePoints = pieData.reduce((s, x) => s + x.points, 0);
 
@@ -2538,14 +2562,14 @@ function App() {
       {/* TOPBAR */}
       <header className="student-topbar">
         <div className="student-topbar-brand">
-          <StarCoinIcon size={22} fill="#C49A3C" />
+          <StarCoinIcon size={22} fill="var(--brass)" />
           <div className="student-topbar-brand-name">Reward Points Portal</div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(244,240,232,0.6)', width: 30, height: 30, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }} aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}>
+          <button onClick={() => setTheme(t => t === 'light' ? 'dark' : 'light')} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)', width: 30, height: 30, borderRadius: 3, display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', flexShrink: 0 }} aria-label={theme === 'light' ? 'Dark mode' : 'Light mode'}>
             {theme === 'light' ? <Moon size={13} /> : <Sun size={13} />}
           </button>
-          <button onClick={handleLogout} style={{ background: 'rgba(212,95,80,0.15)', border: '1px solid rgba(212,95,80,0.3)', color: 'var(--coral)', borderRadius: 3, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-ui)' }} aria-label="Log out">
+          <button onClick={handleLogout} style={{ background: 'var(--coral-light)', border: '1px solid var(--coral-mid)', color: 'var(--coral)', borderRadius: 3, padding: '5px 10px', fontSize: 12, fontWeight: 600, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, fontFamily: 'var(--font-ui)' }} aria-label="Log out">
             <LogOut size={12} aria-hidden="true" /> Log out
           </button>
         </div>
@@ -2554,7 +2578,7 @@ function App() {
       {personalData ? (
         <main role="main" style={{ padding: '20px 24px' }}>
 
-          {/* ── ROW A: Profile + Department Histogram + IP Countdown ── */}
+          {/* -- ROW A: Profile + Department Histogram + IP Countdown -- */}
           <div className="student-row-a" style={{ display: 'grid', gridTemplateColumns: '4fr 3.5fr 2.5fr', gap: 16, marginBottom: 16 }}>
 
             {/* LEFT — Profile Summary (~40%) */}
@@ -2562,7 +2586,7 @@ function App() {
               <div>
                 <div style={{ fontSize: 9, fontWeight: 700, letterSpacing: '0.09em', textTransform: 'uppercase', color: 'var(--fog)', marginBottom: 4 }}>Student Profile</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: 24, fontWeight: 700, color: 'var(--ink)', lineHeight: 1.2, marginBottom: 4 }}>{personalData.student_name}</div>
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--brass)', fontWeight: 600, marginBottom: 12 }}>{personalData.roll_no} · Year {personalData.year}</div>
+                <div style={{ fontFamily: 'var(--font-mono)', fontSize: 11, color: 'var(--brand-primary)', fontWeight: 600, marginBottom: 12 }}>{personalData.roll_no} &bull; Year {personalData.year}</div>
                 <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', color: 'var(--fog)', marginBottom: 2 }}>Department</div>
                 <div style={{ fontFamily: 'var(--font-ui)', fontSize: 12, fontWeight: 700, color: 'var(--teal)' }}>{personalData.department}</div>
               </div>
@@ -2667,7 +2691,7 @@ function App() {
                   </div>
                 </>
               ) : (
-                <div style={{ color: 'var(--fog)', fontSize: 12, paddingTop: 20 }}>Loading…</div>
+                <div style={{ color: 'var(--fog)', fontSize: 12, paddingTop: 20 }}>Loading...</div>
               )}
             </div>
 
@@ -2701,16 +2725,16 @@ function App() {
                   const isBelow = studentBal < deptAvg;
 
                   return isBelow ? (
-                    <button 
+                    <button
                       ref={suggestionsTriggerRef}
                       onClick={handleOpenAIModal}
                       style={{
                         width: '100%',
                         padding: '10px 14px',
-                        background: 'var(--warning-light)',
-                        border: '2px solid #D97706',
+                        background: 'var(--amber-light)',
+                        border: '2px solid var(--amber)',
                         borderRadius: 6,
-                        color: '#B45309',
+                        color: 'var(--amber)',
                         fontSize: 12,
                         fontWeight: 700,
                         cursor: 'pointer',
@@ -2739,7 +2763,7 @@ function App() {
             </div>
           </div>
 
-          {/* ── ROW B: Trend chart ── */}
+          {/* -- ROW B: Trend chart -- */}
           <div className="student-row-b" role="region" aria-label="Points trend" style={{ marginBottom: 16 }}>
             <div className="chart-zone-header">
               <div className="chart-title"><span className="chart-title-accent" aria-hidden="true" />Points trend</div>
@@ -2753,7 +2777,7 @@ function App() {
               <div style={{ width: '100%', height: 160 }}>
                 <ResponsiveContainer>
                   <AreaChart data={trendView === 'weekly' ? personalAnalytics.weekly_trend : trendView === 'monthly' ? personalAnalytics.monthly_trend : personalAnalytics.yearly_trend} margin={{ top: 8, right: 8, left: -20, bottom: 0 }}>
-                    <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#C49A3C" stopOpacity={0.2} /><stop offset="95%" stopColor="#C49A3C" stopOpacity={0} /></linearGradient></defs>
+                    <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="5%" stopColor="#E0A030" stopOpacity={0.2} /><stop offset="95%" stopColor="#E0A030" stopOpacity={0} /></linearGradient></defs>
                     <CartesianGrid strokeDasharray="2 6" stroke="var(--cloud)" vertical={false} />
                     <XAxis dataKey={trendView === 'weekly' ? 'day' : trendView === 'monthly' ? 'month' : 'year'} tick={{ fill: 'var(--fog)', fontSize: 10, fontFamily: 'var(--font-mono)' }} tickFormatter={v => trendView === 'yearly' ? v : typeof v === 'string' ? v.slice(0, 3) : v} />
                     <YAxis tick={{ fill: 'var(--fog)', fontSize: 9, fontFamily: 'var(--font-mono)' }} tickFormatter={v => v.toLocaleString()} />
@@ -2765,7 +2789,7 @@ function App() {
             )}
           </div>
 
-          {/* ── ROW C: Donut + Mentor ── */}
+          {/* -- ROW C: Donut + Mentor -- */}
           <div className="student-row-c" role="region" aria-label="Points distribution and mentor" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
             <div className="student-col">
               <div className="chart-title" style={{ marginBottom: 14 }}>
@@ -2777,7 +2801,7 @@ function App() {
                     <ResponsiveContainer>
                       <PieChart>
                         <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={75} dataKey="points" stroke="none" nameKey="category">
-                          {pieData.map((_, i) => <Cell key={i} fill={DONUT_COLORS[i % DONUT_COLORS.length]} />)}
+                          {pieData.map((cat, i) => <Cell key={i} fill={getCategoryColor(cat.category, i)} />)}
                         </Pie>
                         <Tooltip content={<CustomTooltip />} />
                       </PieChart>
@@ -2793,7 +2817,7 @@ function App() {
                     {pieData.map((cat, i) => (
                       <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: DONUT_COLORS[i % DONUT_COLORS.length], flexShrink: 0 }} />
+                          <div style={{ width: 8, height: 8, borderRadius: '50%', background: getCategoryColor(cat.category, i), flexShrink: 0 }} />
                           <span style={{ color: 'var(--ink)', fontWeight: 500 }}>{cat.category}</span>
                         </div>
                         <span style={{ fontFamily: 'var(--font-mono)', fontSize: 10, color: 'var(--fog)' }}>
@@ -2818,11 +2842,11 @@ function App() {
                   <div className="mentor-avatar-circle" aria-hidden="true">M</div>
                   <div style={{ flex: 1 }}>
                     <div className="mentor-name">Dr. Meena Ravishankar</div>
-                    <div className="mentor-meta">Dept: {abbreviateDept(personalData.department)} · AI &amp; Research</div>
+                    <div className="mentor-meta">Dept: {abbreviateDept(personalData.department)} &bull; AI &amp; Research</div>
                     <div style={{ marginTop: 5 }}><span className="mentor-capacity" aria-label="Pod: 17 of 20 students">17 / 20 pod</span></div>
                   </div>
                 </div>
-                <div style={{ fontSize: 12, color: 'var(--ink)', lineHeight: 1.6, marginBottom: 12, padding: '8px 10px', background: 'rgba(58,122,122,0.06)', borderRadius: 3, borderLeft: '2px solid var(--teal)' }}>
+                <div style={{ fontSize: 12, color: 'var(--ink)', lineHeight: 1.6, marginBottom: 12, padding: '8px 10px', background: 'var(--teal-light)', borderRadius: 3, borderLeft: '2px solid var(--teal)' }}>
                   You share lab and research focus with 16 others in this pod.
                 </div>
                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -2833,7 +2857,7 @@ function App() {
             </div>
           </div>
 
-          {/* ── ROW C2: You vs Your Department stats ── */}
+          {/* -- ROW C2: You vs Your Department stats -- */}
           {personalPerformance && (
             <div className="student-row-c2" style={{ marginBottom: 16, display: 'flex', flexDirection: 'column', alignItems: 'center' }} role="region" aria-label="Performance comparison">
               <div style={{ width: '100%', maxWidth: '900px' }}>
@@ -2868,7 +2892,7 @@ function App() {
                       Top {personalPerformance.percentile}% of your department
                     </span>
                     {personalPerformance.term_delta !== undefined && (
-                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'rgba(58,122,122,0.1)', color: 'var(--teal)', padding: '4px 10px', borderRadius: 4, fontWeight: 700, border: '1px solid rgba(58,122,122,0.2)' }}>
+                      <span style={{ fontFamily: 'var(--font-mono)', fontSize: 11, background: 'var(--teal-light)', color: 'var(--teal)', padding: '4px 10px', borderRadius: 4, fontWeight: 700, border: '1px solid var(--teal-mid)' }}>
                         ▲ {fmt(personalPerformance.term_delta)} pts vs last term
                       </span>
                     )}
@@ -2878,12 +2902,12 @@ function App() {
             </div>
           )}
 
-          {/* ── ROW D: Peer Standing table ── */}
+          {/* -- ROW D: Peer Standing table -- */}
           <div className="student-row-d" role="region" aria-label="Peer comparison" style={{ marginBottom: 16 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14, flexWrap: 'wrap', gap: 8 }}>
               <div>
                 <div className="chart-title" style={{ marginBottom: 2 }}><span className="chart-title-accent" aria-hidden="true" />Peer Standings</div>
-                <div style={{ fontSize: 11, color: 'var(--fog)' }}>Rank {peerLeaderboard?.student_rank || '--'} out of {peerLeaderboard?.total_in_cohort || '--'} in <strong>{peerTab === 'branch' ? abbreviateDept(personalData.department) : 'all branches'}</strong> · Year {personalData.year}</div>
+                <div style={{ fontSize: 11, color: 'var(--fog)' }}>Rank {peerLeaderboard?.student_rank || '--'} out of {peerLeaderboard?.total_in_cohort || '--'} in <strong>{peerTab === 'branch' ? abbreviateDept(personalData.department) : 'all branches'}</strong> &bull; Year {personalData.year}</div>
               </div>
               <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
                 <div className="tab-strip" role="group" aria-label="Peer view">
@@ -2909,9 +2933,9 @@ function App() {
                     const isMe = s.roll_no === personalData.roll_no;
                     const r = s.computed_rank;
                     return (
-                      <tr key={s.roll_no} style={isMe ? { borderLeft: '3px solid var(--brass)' } : {}} aria-label={isMe ? 'Your row' : undefined}>
+                      <tr key={s.roll_no} className={isMe ? 'row-highlight' : ''} aria-label={isMe ? 'Your row' : undefined}>
                         <td style={{ textAlign: 'center' }}><div className={`rank-mark ${r === 1 ? 'rank-1' : r === 2 ? 'rank-2' : r === 3 ? 'rank-3' : 'rank-n'}`}>{r}</div></td>
-                        <td className="td-name"><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{s.student_name}{isMe && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, background: 'var(--brass)', color: 'var(--ink)', padding: '1px 5px', borderRadius: 2, fontWeight: 700 }}>YOU</span>}</div></td>
+                        <td className="td-name"><div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>{s.student_name}{isMe && <span style={{ fontFamily: 'var(--font-mono)', fontSize: 8, background: 'var(--brass)', color: '#FFFFFF', padding: '1px 5px', borderRadius: 2, fontWeight: 700 }}>YOU</span>}</div></td>
                         <td className="td-mono td-meta">{s.roll_no}</td>
                         <td className="td-meta truncate" style={{ maxWidth: 150 }} title={s.department}>{abbreviateDept(s.department)}</td>
                         <td className="td-mono" style={{ textAlign: 'right', fontWeight: 700 }}>{fmt(s.total_points)}</td>
@@ -2924,7 +2948,7 @@ function App() {
             </div>
           </div>
 
-          {/* ── ROW E: Category Totals Redesign (Horizontal Brass Bars) ── */}
+          {/* -- ROW E: Category Totals Redesign (Horizontal Brass Bars) -- */}
           {personalData && (
             <div className="student-row-e" role="region" aria-label="Category Totals">
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
@@ -2936,7 +2960,7 @@ function App() {
         </main>
       ) : (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '60vh', flexDirection: 'column', gap: 12 }}>
-          <div className="spinner" /><div style={{ fontSize: 13, color: 'var(--fog)' }}>Loading your dashboard…</div>
+          <div className="spinner" /><div style={{ fontSize: 13, color: 'var(--fog)' }}>Loading your dashboard...</div>
         </div>
       )}
 
@@ -3108,7 +3132,7 @@ function ViewSuggestionsPopover({ isOpen, onClose, anchor, triggerRef, data, loa
     >
       <div style={{ padding: '12px 14px 10px', borderBottom: '1px solid var(--cloud)', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 12, background: 'var(--paper)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <div style={{ background: 'rgba(58, 122, 122, 0.12)', color: 'var(--teal)', width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <div style={{ background: 'var(--teal-light)', color: 'var(--teal)', width: 30, height: 30, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             {renderIcon('Target', 16)}
           </div>
           <div style={{ minWidth: 0 }}>
@@ -3168,8 +3192,8 @@ function VIPRewardsModal({ isOpen, onClose, studentName, rollNo, balance }) {
   if (!isOpen) return null;
   return (
     <div style={{ position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100000, padding: 16 }}>
-      <div style={{ background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24, textAlign: 'center' }} className="anim-scale-up">
-        <h3 style={{ margin: '0 0 16px 0', color: 'var(--text-primary)' }}>VIP Rewards</h3>
+      <div style={{ background: 'var(--paper)', border: '1px solid var(--cloud)', borderRadius: 16, width: '100%', maxWidth: 440, padding: 24, textAlign: 'center' }} className="anim-scale-up">
+        <h3 style={{ margin: '0 0 16px 0', color: 'var(--ink)' }}>VIP Rewards</h3>
         <p style={{ color: 'var(--fog)', fontSize: 14 }}>Redeem exclusive rewards for {studentName} ({rollNo}). Balance: <strong>{balance}</strong></p>
         <button className="btn-secondary" onClick={onClose} style={{ marginTop: 24 }}>Close</button>
       </div>

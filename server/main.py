@@ -76,12 +76,20 @@ def login(username: str, role: str):
         raise HTTPException(status_code=400, detail="Invalid role specified.")
 
 @app.get("/api/kpis")
-def get_kpis():
-    return db.get_overall_kpis()
+def get_kpis(year: Optional[str] = None):
+    if year == "" or year == "All" or year == "Overall":
+        year = None
+    return db.get_overall_kpis(year)
 
 @app.get("/api/departments")
 def get_departments():
     return db.get_department_stats()
+
+@app.get("/api/departments/performance")
+def get_department_performance(year: Optional[str] = None):
+    if year == "" or year == "All" or year == "Overall":
+        year = None
+    return db.get_department_performance(year)
 
 @app.get("/api/departments/balance")
 def get_department_balance(year: Optional[str] = None):

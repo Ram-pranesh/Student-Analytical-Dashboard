@@ -72,7 +72,7 @@ def init_extra_tables():
 
 init_extra_tables()
 
-def get_overall_kpis():
+def get_overall_kpis(year=None):
     conn = get_db_connection()
     cursor = conn.cursor()
     
@@ -98,6 +98,7 @@ def get_overall_kpis():
     """)
     top_dept_row = cursor.fetchone()
     top_dept = top_dept_row['department'] if top_dept_row else "N/A"
+    top_dept_avg_pts = round(top_dept_row['avg_pts'], 1) if top_dept_row else 0.0
     
     # Students at risk (Low engagement)
     cursor.execute("SELECT COUNT(*) FROM students WHERE engagement_group = 'Low'")
@@ -117,18 +118,58 @@ def get_overall_kpis():
     cursor.execute("SELECT COUNT(*) FROM students WHERE roll_no IN (SELECT roll_no FROM points_breakdown WHERE category = 'Technical Events' AND points_earned > 0)")
     hackathon_active = cursor.fetchone()[0]
 
+    # By-year breakdown for synchronized year filtering
+    year_map = {'Year 1': 'I', 'Year 2': 'II', 'Year 3': 'III', 'Year 4': 'IV'}
+    by_year = {}
+    for yr_label, yr_code in year_map.items():
+        cursor.execute("SELECT COUNT(*), SUM(CASE WHEN total_points > 0 THEN 1 ELSE 0 END) FROM students WHERE year = ?", (yr_code,))
+        y_row = cursor.fetchone()
+        y_cnt = y_row[0] or 0
+        y_act = y_row[1] or 0
+        y_inact = y_cnt - y_act
+        cursor.execute("""
+            SELECT department, AVG(total_points) as avg_pts 
+            FROM students 
+            WHERE year = ? 
+            GROUP BY department 
+            ORDER BY avg_pts DESC 
+            LIMIT 1
+        """, (yr_code,))
+        yd_row = cursor.fetchone()
+        by_year[yr_label] = {
+            "total_students": y_cnt,
+            "active_students": y_act,
+            "inactive_students": y_inact,
+            "top_department": yd_row['department'] if yd_row else "N/A",
+            "top_dept_avg_pts": round(yd_row['avg_pts'], 1) if yd_row else 0.0
+        }
+        by_year[yr_code] = by_year[yr_label]
+
     conn.close()
     
-    return {
+    res = {
         "total_students": total_students,
         "active_students": active_students,
+        "inactive_students": total_students - active_students,
         "avg_points": round(avg_points, 2),
         "top_department": top_dept,
+        "top_dept_avg_pts": top_dept_avg_pts,
         "at_risk_students": at_risk_students,
         "total_lab_count": int(total_lab_count),
         "total_lab_points": round(total_lab_points, 2),
-        "hackathon_active": hackathon_active
+        "hackathon_active": hackathon_active,
+        "by_year": by_year
     }
+
+    if year and year in by_year:
+        yr_stat = by_year[year]
+        res["total_students"] = yr_stat["total_students"]
+        res["active_students"] = yr_stat["active_students"]
+        res["inactive_students"] = yr_stat["inactive_students"]
+        res["top_department"] = yr_stat["top_department"]
+        res["top_dept_avg_pts"] = yr_stat["top_dept_avg_pts"]
+
+    return res
 
 def get_department_stats():
     conn = get_db_connection()
@@ -215,6 +256,51 @@ def get_department_balance_by_year(year=None):
         {
             "department": r['department'],
             "avg_balance_points": round(r['avg_balance_points'] or 0.0, 2),
+            "student_count": r['student_count']
+        }
+        for r in rows
+    ]
+
+def get_department_performance(year=None):
+    """Returns department performance metrics ranked by avg_points DESC, optionally filtered by year."""
+    year_map = {'Year 1': 'I', 'Year 2': 'II', 'Year 3': 'III', 'Year 4': 'IV'}
+    yr_code = year_map.get(year, year)
+    if yr_code in ("All", "Overall", "", None):
+        yr_code = None
+
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    if yr_code:
+        cursor.execute("""
+            SELECT department,
+                   AVG(total_points) as avg_points,
+                   AVG(balance_points) as avg_balance_points,
+                   COUNT(*) as student_count
+            FROM students
+            WHERE year = ?
+            GROUP BY department
+            ORDER BY avg_points DESC
+        """, (yr_code,))
+    else:
+        cursor.execute("""
+            SELECT department,
+                   AVG(total_points) as avg_points,
+                   AVG(balance_points) as avg_balance_points,
+                   COUNT(*) as student_count
+            FROM students
+            GROUP BY department
+            ORDER BY avg_points DESC
+        """)
+    
+    rows = cursor.fetchall()
+    conn.close()
+    
+    return [
+        {
+            "department": r['department'],
+            "avg_points": round(r['avg_points'] or 0.0, 1),
+            "avg_balance_points": round(r['avg_balance_points'] or 0.0, 1),
             "student_count": r['student_count']
         }
         for r in rows
